@@ -2,7 +2,7 @@ import asyncio
 from config import HOST, PORT
 
 async def handle_client(reader, writer):
-    pass
+    print("Client Connected !")
 
 
 
@@ -15,6 +15,9 @@ async def start_server():
     server = await asyncio.start_server(handle_client, HOST, PORT)
 
     print("Server created Successfully !")
+
+    async with server:
+        await server.serve_forever()
     
 
 
