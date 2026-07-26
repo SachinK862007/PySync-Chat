@@ -1,8 +1,9 @@
 import asyncio
-from config import HOST, PORT
+from .config import HOST, PORT
 
 async def handle_client(reader, writer):
     print("Client Connected !")
+    data = await reader.readline()
 
 
 
