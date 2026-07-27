@@ -3,13 +3,24 @@ from .config import HOST, PORT
 
 async def handle_client(reader, writer):
     print("Client Connected !")
-    data = await reader.readline()
-    message = data.decode()
-    print(message)
-    replay = "hello client!\n"
-    writer.write(replay.encode())
-    await writer.drain()
+    while True:
+        data = await reader.readline()
+        if not data:
+            break
 
+        message = data.decode().strip()
+
+        if message.upper() == 'EXIT':
+            break
+
+        print(message)
+        reply = "hello client!\n"
+        writer.write(reply.encode())
+        await writer.drain()
+
+    writer.close()
+    await writer.wait_closed()
+    print("Client Disconnected !")
 
 
 async def start_server():
