@@ -1,6 +1,14 @@
 import asyncio
 from server.config import HOST, PORT
 
+async def send_messages(writer):
+    pass
+
+
+async def recive_messages(reader):
+    pass
+
+
 async def start_client():
     reader, writer = await asyncio.open_connection(HOST, PORT)
     while True:
