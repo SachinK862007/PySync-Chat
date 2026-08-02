@@ -23,7 +23,7 @@ async def handle_client(reader, writer):
                     await client.drain()
 
             print(message)
-            reply = "hello client!\n"
+            reply = "\n"
             writer.write(reply.encode())
             await writer.drain()
     

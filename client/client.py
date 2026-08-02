@@ -2,21 +2,13 @@ import asyncio
 from server.config import HOST, PORT
 
 async def send_messages(writer):
-    pass
-
-
-async def recive_messages(reader):
-    pass
-
-
-async def start_client():
-    reader, writer = await asyncio.open_connection(HOST, PORT)
     while True:
-        message = input("> ") + "\n"
+        message = await asyncio.to_thread(input, "> ")
+        message += "\n"
         
         if message.upper().strip() == 'EXIT':
             while True:
-                enter = input("\nDo u confirm to EXIT ? (YES) or (NO) : ")
+                enter = await asyncio.to_thread(input,"\nDo u confirm to EXIT ? (YES) or (NO) : ")
                 if enter.upper() == 'YES':
                     message = "EXIT\n"
                     break
@@ -32,9 +24,31 @@ async def start_client():
         await writer.drain()
         if message.strip().upper() == 'EXIT':
             break
+
+
+async def receive_messages(reader):
+    while True:
+
         data = await reader.readline()
+
+        if not data:
+            break
+
         reply = data.decode()
         print(reply)
+
+
+
+async def start_client():
+
+    name = input("Enter your nickname : ")
+
+    reader, writer = await asyncio.open_connection(HOST, PORT)
+
+    writer.write((name + "\n").encode())
+    await writer.drain()
+
+    await asyncio.gather(send_messages(writer), receive_messages(reader))
 
 
 
