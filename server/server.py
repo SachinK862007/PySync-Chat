@@ -38,12 +38,11 @@ async def handle_client(reader, writer):
         try:
 
             connected_clients.remove(writer)
+            nicknames.pop(writer, None)
         
         except ValueError:
             pass
 
-        connected_clients.remove(writer)
-        nicknames.pop(writer, None)
         writer.close()
         await writer.wait_closed()
         print(f"{nickname} Disconnected !")
