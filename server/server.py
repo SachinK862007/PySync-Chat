@@ -2,10 +2,14 @@ import asyncio
 from .config import HOST, PORT
 
 connected_clients = []
+nicknames = {}
 
 async def handle_client(reader, writer):
     connected_clients.append(writer)
-    print("Client Connected !")
+    nickname_data = await reader.readline()
+    nickname = nickname_data.decode().strip()
+    nicknames[writer] = nickname
+    print(f"{nickname} Connected !")
     try:
         while True:
             data = await reader.readline()
@@ -17,13 +21,15 @@ async def handle_client(reader, writer):
             if message.upper() == 'EXIT':
                 break
 
+            broadcast_message = f"{nicknames[writer]}: {message}\n"
+
             for client in connected_clients:
                 if client != writer:
-                    client.write((message + "\n").encode())
+                    client.write(broadcast_message.encode())
                     await client.drain()
 
             print(message)
-            reply = "\n"
+            reply = "> "
             writer.write(reply.encode())
             await writer.drain()
     
@@ -32,13 +38,14 @@ async def handle_client(reader, writer):
         try:
 
             connected_clients.remove(writer)
+            nicknames.pop(writer, None)
         
         except ValueError:
             pass
 
         writer.close()
         await writer.wait_closed()
-        print("Client Disconnected !")
+        print(f"{nickname} Disconnected !")
 
 
 async def start_server():
