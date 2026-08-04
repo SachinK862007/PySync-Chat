@@ -3,13 +3,24 @@ from .config import HOST, PORT
 
 connected_clients = []
 nicknames = {}
+rooms = {
+    "general": []
+}
 
 async def handle_client(reader, writer):
+
     connected_clients.append(writer)
+
+    rooms["general"].append(writer)
+
     nickname_data = await reader.readline()
+    
     nickname = nickname_data.decode().strip()
+    
     nicknames[writer] = nickname
+    
     print(f"{nickname} Connected !")
+    
     try:
         while True:
             data = await reader.readline()
