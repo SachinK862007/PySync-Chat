@@ -20,7 +20,7 @@ async def handle_client(reader, writer):
     
     nicknames[writer] = nickname
     
-    print(f"{nickname} Connected !")
+    print(f"{nickname} Connected to general room !")
     
     try:
         while True:
@@ -36,6 +36,11 @@ async def handle_client(reader, writer):
                     rooms[room_name] = []
                     rooms["general"].remove(writer)
                     rooms[room_name].append(writer)
+                    join_message = f"{nicknames[writer]} joined : {room_name}\n"
+
+                    for client in rooms[room_name]:
+                        client.write(join_message.encode())
+                        await client.drain()
 
                 room_name = message.split(maxsplit = 1)[1]
 
