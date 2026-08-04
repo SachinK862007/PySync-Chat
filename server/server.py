@@ -6,6 +6,7 @@ nicknames = {}
 rooms = {
     "general": []
 }
+#client_rooms = {}
 
 async def handle_client(reader, writer):
 
@@ -19,7 +20,7 @@ async def handle_client(reader, writer):
     
     nicknames[writer] = nickname
     
-    print(f"{nickname} Connected !")
+    print(f"{nickname} Connected to general room !")
     
     try:
         while True:
@@ -29,12 +30,32 @@ async def handle_client(reader, writer):
 
             message = data.decode().strip()
 
+            if message.lower().startswith("/join "):
+
+                if room_name not in rooms:
+                    rooms[room_name] = []
+                    rooms["general"].remove(writer)
+                    rooms[room_name].append(writer)
+                    join_message = f"{nicknames[writer]} joined : {room_name}\n"
+
+                    for client in rooms[room_name]:
+                        client.write(join_message.encode())
+                        await client.drain()
+
+                room_name = message.split(maxsplit = 1)[1]
+
+            for room_name, clients in rooms.items():
+                if writer in clients:
+                    current_room = room_name
+                    break
+
+
             if message.upper() == 'EXIT':
                 break
 
             broadcast_message = f"{nicknames[writer]}: {message}\n"
 
-            for client in connected_clients:
+            for client in rooms[current_room]:
                 if client != writer:
                     client.write(broadcast_message.encode())
                     await client.drain()
@@ -50,6 +71,7 @@ async def handle_client(reader, writer):
 
             connected_clients.remove(writer)
             nicknames.pop(writer, None)
+            rooms["general"].remove(writer)
         
         except ValueError:
             pass
