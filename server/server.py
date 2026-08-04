@@ -29,12 +29,15 @@ async def handle_client(reader, writer):
 
             message = data.decode().strip()
 
+            if message.lower().startswith("/join "):
+                room_name = message.split(maxsplit = 1)[1]
+
             if message.upper() == 'EXIT':
                 break
 
             broadcast_message = f"{nicknames[writer]}: {message}\n"
 
-            for client in connected_clients:
+            for client in rooms["general"]:
                 if client != writer:
                     client.write(broadcast_message.encode())
                     await client.drain()
@@ -50,6 +53,7 @@ async def handle_client(reader, writer):
 
             connected_clients.remove(writer)
             nicknames.pop(writer, None)
+            rooms["general"].remove(writer)
         
         except ValueError:
             pass
