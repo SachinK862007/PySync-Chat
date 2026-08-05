@@ -32,6 +32,12 @@ async def handle_client(reader, writer):
 
             if message.lower().startswith("/join "):
 
+                current_room = None
+                for name, client in rooms.items():
+                    if writer in client:
+                        current_room = name
+                        break
+
                 if room_name not in rooms:
                     rooms[room_name] = []
                     rooms["general"].remove(writer)
