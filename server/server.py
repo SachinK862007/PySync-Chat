@@ -32,6 +32,8 @@ async def handle_client(reader, writer):
 
             if message.lower().startswith("/join "):
 
+                room_name = message.split(maxsplit = 1)[1]
+
                 current_room = None
 
                 for name, client in rooms.items():
@@ -55,7 +57,7 @@ async def handle_client(reader, writer):
                         client.write(join_message.encode())
                         await client.drain()
 
-                room_name = message.split(maxsplit = 1)[1]
+                
 
             for room_name, clients in rooms.items():
                 if writer in clients:
