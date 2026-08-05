@@ -33,14 +33,21 @@ async def handle_client(reader, writer):
             if message.lower().startswith("/join "):
 
                 current_room = None
+
                 for name, client in rooms.items():
                     if writer in client:
                         current_room = name
                         break
 
+                if current_room == room_name:
+                    replay = f"You are already in {room_name} room !\n"
+                    writer.write(replay.encode())
+                    await writer.drain()
+                    continue
+
                 if room_name not in rooms:
                     rooms[room_name] = []
-                    rooms["general"].remove(writer)
+                    rooms[current_room].remove(writer)
                     rooms[room_name].append(writer)
                     join_message = f"{nicknames[writer]} joined : {room_name}\n"
 
