@@ -49,13 +49,14 @@ async def handle_client(reader, writer):
 
                 if room_name not in rooms:
                     rooms[room_name] = []
-                    rooms[current_room].remove(writer)
-                    rooms[room_name].append(writer)
-                    join_message = f"{nicknames[writer]} joined : {room_name}\n"
+                    
+                rooms[current_room].remove(writer)
+                rooms[room_name].append(writer)
+                join_message = f"{nicknames[writer]} joined : {room_name}\n"
 
-                    for client in rooms[room_name]:
-                        client.write(join_message.encode())
-                        await client.drain()
+                for client in rooms[room_name]:
+                    client.write(join_message.encode())
+                    await client.drain()
 
                 
 
