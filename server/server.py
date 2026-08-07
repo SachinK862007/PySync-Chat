@@ -8,6 +8,9 @@ rooms = {
 }
 #client_rooms = {}
 
+async def find_current_room(writer):
+    pass
+
 async def handle_client(reader, writer):
 
     connected_clients.append(writer)
