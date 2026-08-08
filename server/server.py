@@ -13,6 +13,8 @@ async def find_current_room(writer):
         if writer in clients:
             return room_name
 
+    return None
+
 async def handle_client(reader, writer):
 
     connected_clients.append(writer)
@@ -39,12 +41,7 @@ async def handle_client(reader, writer):
 
                 room_name = message.split(maxsplit = 1)[1]
 
-                current_room = None
-
-                for name, client in rooms.items():
-                    if writer in client:
-                        current_room = name
-                        break
+                current_room = await find_current_room(writer)
 
                 if current_room == room_name:
                     replay = f"You are already in {room_name} room !\n"
@@ -64,11 +61,7 @@ async def handle_client(reader, writer):
                     await client.drain()
 
                 
-
-            for room_name, clients in rooms.items():
-                if writer in clients:
-                    current_room = room_name
-                    break
+            current_room = await find_current_room(writer)
 
 
             if message.upper() == 'EXIT':
