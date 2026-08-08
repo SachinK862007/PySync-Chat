@@ -132,4 +132,4 @@ if __name__ == '__main__':
     try:
         asyncio.run(start_server())
     except KeyboardInterrupt:
-        print("\nDeveloper stopped the connection using Ctrl + C.")
+        print("\nDeveloper stopped the server using Ctrl + C.")
