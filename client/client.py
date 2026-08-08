@@ -6,11 +6,11 @@ async def send_messages(writer):
         message = await asyncio.to_thread(input, "> ")
         message += "\n"
         
-        if message.upper().strip() == 'EXIT':
+        if message.upper().strip() == '/EXIT':
             while True:
                 enter = await asyncio.to_thread(input,"\nDo u confirm to EXIT ? (YES) or (NO) : ")
                 if enter.upper() == 'YES':
-                    message = "EXIT\n"
+                    message = "/EXIT\n"
                     break
                 elif enter.upper() == 'NO':
                     break
@@ -22,7 +22,7 @@ async def send_messages(writer):
 
         writer.write(message.encode())
         await writer.drain()
-        if message.strip().upper() == 'EXIT':
+        if message.strip().upper() == '/EXIT':
             break
 
 

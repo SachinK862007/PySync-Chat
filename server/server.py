@@ -6,6 +6,13 @@ nicknames = {}
 rooms = {
     "general": []
 }
+commands = {
+    "/join" : "Join a specific room. Usage :  /join <room_name>",
+    "/help" : "Display available commands. Usage : /help",
+    "/rooms" : "Display available rooms. Usage : /rooms",
+    "/users" : "Display users in the current room. Usage : /users",
+    "/exit" : "Exit the chat. Usage : /exit"
+}
 
 #1st function 
 async def find_current_room(writer):
@@ -41,6 +48,19 @@ async def remove_client(writer):
     if writer in connected_clients:
         connected_clients.remove(writer)
         nicknames.pop(writer,None)
+
+
+#5th function 
+async def handle_help(writer):
+    help_message = " "
+
+    for command, description in commands.items():
+        help_message += f"{command} : {description}\n"
+    
+    writer.write(help_message.encode())
+    await writer.drain()
+
+
 
 
 #main function that call above functions
@@ -91,7 +111,12 @@ async def handle_client(reader, writer):
             current_room = await find_current_room(writer) #calls 1st function
 
 
-            if message.upper() == 'EXIT':
+            if message.upper() == "/HELP":
+                await handle_help(writer) # calls 5th function
+                continue
+
+
+            if message.upper() == '/EXIT':
                 break
 
             broadcast_message = f"{nicknames[writer]}: {message}\n"
