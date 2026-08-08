@@ -8,10 +8,10 @@ rooms = {
 }
 #client_rooms = {}
 
-#async def find_current_room(writer):
-#    for room_name, clients in rooms.items():
-#        if writer in clients:
-#            return room_name
+async def find_current_room(writer):
+    for room_name, clients in rooms.items():
+        if writer in clients:
+            return room_name
 
 async def handle_client(reader, writer):
 
