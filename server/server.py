@@ -6,8 +6,8 @@ nicknames = {}
 rooms = {
     "general": []
 }
-#client_rooms = {}
 
+#1st function 
 async def find_current_room(writer):
     for room_name, clients in rooms.items():
         if writer in clients:
@@ -15,6 +15,25 @@ async def find_current_room(writer):
 
     return None
 
+
+#2nd function
+async def move_client(writer,room_name):
+    current_room = await find_current_room(writer)
+
+    rooms[current_room].remove(writer)
+    rooms[room_name].append(writer)
+
+
+#3rd function
+async def brodcast_to_room(room_name, message, sender = None):
+    for client in rooms[room_name]:
+        if sender is None or client != sender:
+            client.write(message.encode())
+            await client.drain()
+
+
+
+#main function that call above functions
 async def handle_client(reader, writer):
 
     connected_clients.append(writer)
@@ -41,7 +60,7 @@ async def handle_client(reader, writer):
 
                 room_name = message.split(maxsplit = 1)[1]
 
-                current_room = await find_current_room(writer)
+                current_room = await find_current_room(writer) #calls 1st function
 
                 if current_room == room_name:
                     replay = f"You are already in {room_name} room !\n"
@@ -51,17 +70,15 @@ async def handle_client(reader, writer):
 
                 if room_name not in rooms:
                     rooms[room_name] = []
-                    
-                rooms[current_room].remove(writer)
-                rooms[room_name].append(writer)
+
+                await move_client(writer,room_name)    # calls 2nd function
+                
                 join_message = f"{nicknames[writer]} joined : {room_name}\n"
 
-                for client in rooms[room_name]:
-                    client.write(join_message.encode())
-                    await client.drain()
+                await brodcast_to_room(room_name, join_message) # calls 3rd function
 
                 
-            current_room = await find_current_room(writer)
+            current_room = await find_current_room(writer) #calls 1st function
 
 
             if message.upper() == 'EXIT':
@@ -69,10 +86,7 @@ async def handle_client(reader, writer):
 
             broadcast_message = f"{nicknames[writer]}: {message}\n"
 
-            for client in rooms[current_room]:
-                if client != writer:
-                    client.write(broadcast_message.encode())
-                    await client.drain()
+            await brodcast_to_room(current_room, broadcast_message, writer) # calls 3rd function
 
             print(message)
             reply = "> "
@@ -81,15 +95,12 @@ async def handle_client(reader, writer):
     
     
     finally:
-        try:
+       
 
-            connected_clients.remove(writer)
-            nicknames.pop(writer, None)
-            rooms["general"].remove(writer)
+        connected_clients.remove(writer)
+        nicknames.pop(writer, None)
+        rooms["general"].remove(writer)
         
-        except ValueError:
-            pass
-
         writer.close()
         await writer.wait_closed()
         print(f"{nickname} Disconnected !")
