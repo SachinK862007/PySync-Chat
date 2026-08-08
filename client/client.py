@@ -53,6 +53,8 @@ async def start_client():
 
 
 if __name__ == '__main__':
-    asyncio.run(start_client())
-
+    try:
+        asyncio.run(start_client())
+    except KeyboardInterrupt:
+        print("\nDeveloper stopped the server using Ctrl + C.")
 

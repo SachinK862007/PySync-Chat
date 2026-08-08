@@ -32,6 +32,16 @@ async def brodcast_to_room(room_name, message, sender = None):
             await client.drain()
 
 
+#4th function
+async def remove_client(writer):
+    current_room = await find_current_room(writer)
+    if current_room is not None:
+        rooms[current_room].remove(writer)
+
+    if writer in connected_clients:
+        connected_clients.remove(writer)
+        nicknames.pop(writer,None)
+
 
 #main function that call above functions
 async def handle_client(reader, writer):
@@ -95,11 +105,7 @@ async def handle_client(reader, writer):
     
     
     finally:
-       
-
-        connected_clients.remove(writer)
-        nicknames.pop(writer, None)
-        rooms["general"].remove(writer)
+        await remove_client(writer) # calls 4th function
         
         writer.close()
         await writer.wait_closed()
