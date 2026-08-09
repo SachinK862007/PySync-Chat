@@ -6,6 +6,7 @@ nicknames = {}
 rooms = {
     "general": []
 }
+
 commands = {
     "/join" : "Join a specific room. Usage :  /join <room_name>",
     "/help" : "Display available commands. Usage : /help",
@@ -61,6 +62,27 @@ async def handle_help(writer):
     await writer.drain()
 
 
+#6th function
+async def handle_rooms(writer):
+    rooms_message = "Available Rooms\n"
+    
+    for room_name in rooms:
+        rooms_message += f"{room_name}\n"
+
+    writer.write(rooms_message.encode())
+    await writer.drain()
+
+#7th function
+async def handle_users(writer):
+    current_room = await find_current_room(writer)
+    users_message = f"Users in {current_room}\n"
+
+    for client in rooms[current_room]:
+        users_message += f"{nicknames[client]}\n"
+
+    writer.write(users_message.encode())
+    await writer.drain()
+
 
 
 #main function that call above functions
@@ -115,6 +137,13 @@ async def handle_client(reader, writer):
                 await handle_help(writer) # calls 5th function
                 continue
 
+            if message.upper() == "/ROOMS":
+                await handle_rooms(writer) # calls 6th function
+                continue
+
+            if message.upper() == "/USERS":
+                await handle_users(writer) # calls 7th function
+                continue
 
             if message.upper() == '/EXIT':
                 break
