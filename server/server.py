@@ -52,8 +52,8 @@ async def remove_client(writer):
 
 #5th function 
 async def handle_help(writer):
-    help_message = " "
-
+    help_message = "Available Commands\n"
+    
     for command, description in commands.items():
         help_message += f"{command} : {description}\n"
     
