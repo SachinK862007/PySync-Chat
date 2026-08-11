@@ -4,13 +4,14 @@ from .config import HOST, PORT
 connected_clients = []
 nicknames = {}
 private_chats = {}
+active_dms = {}
 rooms = {
     "general": []
 }
 
 commands = {
     "/join" : "Join a specific room. Usage :  /join <room_name>",
-    "/dm" : "Send a private message. Usage : /dm <nickname>",
+    "/dm" : "Send a private message. Usage : /dm <nickname> <message>",
     "/help" : "Display available commands. Usage : /help",
     "/rooms" : "Display available rooms. Usage : /rooms",
     "/users" : "Display users in the current room. Usage : /users",
@@ -97,7 +98,7 @@ async def handle_users(writer):
 
 #8th function
 async def find_user_by_nickname(target_nickname):
-    for writer, nickname in nicknames.item():
+    for writer, nickname in nicknames.items():
         if nickname.upper() == target_nickname.upper():
             return writer
 
@@ -158,8 +159,8 @@ async def handle_client(reader, writer):
                 current_room = await find_current_room(writer) #calls 1st function
 
                 if current_room == room_name:
-                    replay = f"You are already in {room_name} room !\n"
-                    writer.write(replay.encode())
+                    reply = f"You are already in {room_name} room !\n"
+                    writer.write(reply.encode())
                     await writer.drain()
                     continue
 
@@ -188,8 +189,33 @@ async def handle_client(reader, writer):
                 await handle_users(writer) # calls 7th function
                 continue
 
-            if message.upper().startswith("/DM "):
-                pass
+            if message.upper() == "/DM" or message.upper().startswith("/DM "):
+                parts = message.split(maxsplit = 2)
+                if len(parts) < 3:
+                    reply = "Usage: /dm <nickname> <message>\n"
+                    writer.write(reply.encode())
+                    await writer.drain()
+                    continue
+
+                target_nickname = parts[1]
+                private_message = parts[2]
+
+                target_writer = await find_user_by_nickname(target_nickname) # calls 8th function
+
+                if target_writer is None:
+                    reply = f"User {target_nickname} not found !\n"
+                    writer.write(reply.encode())
+                    await writer.drain()
+                    continue
+
+                dm_id = await create_private_chat(writer, target_writer) # calls 10th function
+                dm_message = f"[DM from {nicknames[writer]}] : {private_message}\n"
+
+                
+                target_writer.write(dm_message.encode())
+                await target_writer.drain()
+                continue
+
 
             if message.upper() == '/EXIT':
                 break
