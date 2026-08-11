@@ -4,17 +4,20 @@ from .config import HOST, PORT
 connected_clients = []
 nicknames = {}
 private_chats = {}
+active_dms = {}
 rooms = {
     "general": []
 }
 
 commands = {
     "/join" : "Join a specific room. Usage :  /join <room_name>",
+    "/dm" : "Send a private message. Usage : /dm <nickname> <message>",
     "/help" : "Display available commands. Usage : /help",
     "/rooms" : "Display available rooms. Usage : /rooms",
     "/users" : "Display users in the current room. Usage : /users",
     "/exit" : "Exit the chat. Usage : /exit"
 }
+
 
 #1st function 
 async def find_current_room(writer):
@@ -25,6 +28,7 @@ async def find_current_room(writer):
     return None
 
 
+
 #2nd function
 async def move_client(writer,room_name):
     current_room = await find_current_room(writer)
@@ -33,12 +37,14 @@ async def move_client(writer,room_name):
     rooms[room_name].append(writer)
 
 
+
 #3rd function
 async def brodcast_to_room(room_name, message, sender = None):
     for client in rooms[room_name]:
         if sender is None or client != sender:
             client.write(message.encode())
             await client.drain()
+
 
 
 #4th function
@@ -52,6 +58,7 @@ async def remove_client(writer):
         nicknames.pop(writer,None)
 
 
+
 #5th function 
 async def handle_help(writer):
     help_message = "Available Commands\n"
@@ -61,6 +68,7 @@ async def handle_help(writer):
     
     writer.write(help_message.encode())
     await writer.drain()
+
 
 
 #6th function
@@ -73,6 +81,8 @@ async def handle_rooms(writer):
     writer.write(rooms_message.encode())
     await writer.drain()
 
+
+
 #7th function
 async def handle_users(writer):
     current_room = await find_current_room(writer)
@@ -83,6 +93,39 @@ async def handle_users(writer):
 
     writer.write(users_message.encode())
     await writer.drain()
+
+
+
+#8th function
+async def find_user_by_nickname(target_nickname):
+    for writer, nickname in nicknames.items():
+        if nickname.upper() == target_nickname.upper():
+            return writer
+
+    return None
+
+
+
+#9th function
+async def find_private_chat(writer, target_writer):
+    for dm_id, members in private_chats.items():
+        if writer in members and target_writer in members:
+         return dm_id
+
+    return None
+
+
+
+
+#10th function
+async def create_private_chat(writer, target_writer):
+    existing_dm = await find_private_chat(writer, target_writer)
+    if existing_dm is not None:
+        return existing_dm
+
+    dm_id = f"dm_{len(private_chats) + 1}"
+    private_chats[dm_id] = [writer, target_writer]
+    return dm_id
 
 
 
@@ -116,8 +159,8 @@ async def handle_client(reader, writer):
                 current_room = await find_current_room(writer) #calls 1st function
 
                 if current_room == room_name:
-                    replay = f"You are already in {room_name} room !\n"
-                    writer.write(replay.encode())
+                    reply = f"You are already in {room_name} room !\n"
+                    writer.write(reply.encode())
                     await writer.drain()
                     continue
 
@@ -145,6 +188,34 @@ async def handle_client(reader, writer):
             if message.upper() == "/USERS":
                 await handle_users(writer) # calls 7th function
                 continue
+
+            if message.upper() == "/DM" or message.upper().startswith("/DM "):
+                parts = message.split(maxsplit = 2)
+                if len(parts) < 3:
+                    reply = "Usage: /dm <nickname> <message>\n"
+                    writer.write(reply.encode())
+                    await writer.drain()
+                    continue
+
+                target_nickname = parts[1]
+                private_message = parts[2]
+
+                target_writer = await find_user_by_nickname(target_nickname) # calls 8th function
+
+                if target_writer is None:
+                    reply = f"User {target_nickname} not found !\n"
+                    writer.write(reply.encode())
+                    await writer.drain()
+                    continue
+
+                dm_id = await create_private_chat(writer, target_writer) # calls 10th function
+                dm_message = f"[DM from {nicknames[writer]}] : {private_message}\n"
+
+                
+                target_writer.write(dm_message.encode())
+                await target_writer.drain()
+                continue
+
 
             if message.upper() == '/EXIT':
                 break
