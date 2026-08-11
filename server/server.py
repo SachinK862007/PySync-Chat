@@ -3,6 +3,7 @@ from .config import HOST, PORT
 
 connected_clients = []
 nicknames = {}
+private_chats = {}
 rooms = {
     "general": []
 }
