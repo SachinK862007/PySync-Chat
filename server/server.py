@@ -10,6 +10,7 @@ rooms = {
 
 commands = {
     "/join" : "Join a specific room. Usage :  /join <room_name>",
+    "/dm" : "Send a private message. Usage : /dm <nickname>",
     "/help" : "Display available commands. Usage : /help",
     "/rooms" : "Display available rooms. Usage : /rooms",
     "/users" : "Display users in the current room. Usage : /users",
@@ -105,9 +106,25 @@ async def find_user_by_nickname(target_nickname):
 
 
 #9th function
-async def create_private_chat(writer, target_nickname):
-    pass
+async def find_private_chat(writer, target_writer):
+    for dm_id, members in private_chats.items():
+        if writer in members and target_writer in members:
+         return dm_id
 
+    return None
+
+
+
+
+#10th function
+async def create_private_chat(writer, target_writer):
+    existing_dm = await find_private_chat(writer, target_writer)
+    if existing_dm is not None:
+        return existing_dm
+
+    dm_id = f"dm_{len(private_chats) + 1}"
+    private_chats[dm_id] = [writer, target_writer]
+    return dm_id
 
 
 
@@ -170,6 +187,9 @@ async def handle_client(reader, writer):
             if message.upper() == "/USERS":
                 await handle_users(writer) # calls 7th function
                 continue
+
+            if message.upper().startswith("/DM "):
+                pass
 
             if message.upper() == '/EXIT':
                 break
