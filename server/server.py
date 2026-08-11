@@ -16,6 +16,7 @@ commands = {
     "/exit" : "Exit the chat. Usage : /exit"
 }
 
+
 #1st function 
 async def find_current_room(writer):
     for room_name, clients in rooms.items():
@@ -23,6 +24,7 @@ async def find_current_room(writer):
             return room_name
 
     return None
+
 
 
 #2nd function
@@ -33,12 +35,14 @@ async def move_client(writer,room_name):
     rooms[room_name].append(writer)
 
 
+
 #3rd function
 async def brodcast_to_room(room_name, message, sender = None):
     for client in rooms[room_name]:
         if sender is None or client != sender:
             client.write(message.encode())
             await client.drain()
+
 
 
 #4th function
@@ -52,6 +56,7 @@ async def remove_client(writer):
         nicknames.pop(writer,None)
 
 
+
 #5th function 
 async def handle_help(writer):
     help_message = "Available Commands\n"
@@ -61,6 +66,7 @@ async def handle_help(writer):
     
     writer.write(help_message.encode())
     await writer.drain()
+
 
 
 #6th function
@@ -73,6 +79,8 @@ async def handle_rooms(writer):
     writer.write(rooms_message.encode())
     await writer.drain()
 
+
+
 #7th function
 async def handle_users(writer):
     current_room = await find_current_room(writer)
@@ -83,6 +91,23 @@ async def handle_users(writer):
 
     writer.write(users_message.encode())
     await writer.drain()
+
+
+
+#8th function
+async def find_user_by_nickname(target_nickname):
+    for writer, nickname in nicknames.item():
+        if nickname.upper() == target_nickname.upper():
+            return writer
+
+    return None
+
+
+
+#9th function
+async def create_private_chat(writer, target_nickname):
+    pass
+
 
 
 
