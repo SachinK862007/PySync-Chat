@@ -19,6 +19,14 @@ commands = {
     "/exit" : "Exit the chat. Usage : /exit"
 }
 
+#storage for chat history
+def connect_db():
+    connection = sqlite3.connect("pysync_chat.db")
+    return connection
+
+
+
+
 
 #1st function 
 async def find_current_room(writer):
