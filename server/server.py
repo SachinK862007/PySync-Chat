@@ -1,4 +1,5 @@
 import asyncio
+import sqlite3
 from .config import HOST, PORT
 
 connected_clients = []
