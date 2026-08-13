@@ -226,11 +226,22 @@ async def handle_client(reader, writer):
                 await move_client(writer,room_name)    # calls 2nd function
                 
                 history = get_messages(connect_db(), room_name)
-                for row in history:
-                    message_id, sender, message, conversation, timestamp = row
-                    history_message = f"{sender} : {message}\n"
-                    writer.write(history_message.encode())
+
+                if not history:
+                   reply = "----No previous messages.----\n"
+                   writer.write(reply.encode())
+                   await writer.drain()
+                else:
+                    history_header = f"----Previous messages in {room_name}----\n"
+                    writer.write(history_header.encode())
                     await writer.drain()
+
+
+                    for row in history:
+                        message_id, sender, message, conversation, timestamp = row
+                        history_message = f"{sender} : {message}\n"
+                        writer.write(history_message.encode())
+                        await writer.drain()
 
                 join_message = f"{nicknames[writer]} joined : {room_name}\n"
 
@@ -273,11 +284,33 @@ async def handle_client(reader, writer):
                     continue
 
                 dm_id = await create_private_chat(writer, target_writer) # calls 10th function
+
+                
+                history = get_messages(connect_db(), dm_id)
+
+                if not history:
+                   reply = "----No previous messages.----\n"
+                   writer.write(reply.encode())
+                   await writer.drain()
+                else:
+                    history_header = f"----Previous messages in DM with {target_nickname}----\n"
+                    writer.write(history_header.encode())
+                    await writer.drain()
+
+                    for row in history:
+                        message_id, sender, message, conversation, timestamp = row
+                        history_message = f"{sender} : {message}\n"
+                        writer.write(history_message.encode())
+                        await writer.drain()
+
+
                 dm_message = f"[DM from {nicknames[writer]}] : {private_message}\n"
 
                 execution_2(connect_db(), writer, private_message, dm_id) # calls 11th function private messages
+
                 target_writer.write(dm_message.encode())
                 await target_writer.drain()
+
                 continue
 
 
