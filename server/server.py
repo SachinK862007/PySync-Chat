@@ -53,7 +53,7 @@ def save_message(connection, sender, message, conversation):
 #function to retrieve the chat history from the DB
 def get_messages(connection, conversation):
     cursor = connection.cursor()
-    cursor.execute("SELECT * FROM messages WHERE conversation = ?", (conversation,))
+    cursor.execute("SELECT * FROM messages WHERE conversation = ? ORDER BY id ASC", (conversation,))
     messages = cursor.fetchall()
     return messages
 
@@ -225,6 +225,13 @@ async def handle_client(reader, writer):
 
                 await move_client(writer,room_name)    # calls 2nd function
                 
+                history = get_messages(connect_db(), room_name)
+                for row in history:
+                    message_id, sender, message, conversation, timestamp = row
+                    history_message = f"{sender} : {message}\n"
+                    writer.write(history_message.encode())
+                    await writer.drain()
+
                 join_message = f"{nicknames[writer]} joined : {room_name}\n"
 
                 await brodcast_to_room(room_name, join_message) # calls 3rd function
