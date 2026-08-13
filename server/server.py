@@ -51,33 +51,27 @@ def save_message(connection, sender, message, conversation):
     connection.commit()
 
 #function to retrieve the chat history from the DB
-def get_messages(connection):
+def get_messages(connection, conversation):
     cursor = connection.cursor()
-    cursor.execute("SELECT * FROM messages")
+    cursor.execute("SELECT * FROM messages WHERE conversation = ? ORDER BY id ASC", (conversation,))
     messages = cursor.fetchall()
     return messages
 
 
 #11th function to send the qury to the DB for public rooms
 def execution(connection, sender, message, conversation):
-    #connection = connect_db()
-
     save_message(connection, nicknames[sender], message, conversation)
 
-    messages = get_messages(connection)
-    print(messages)
-
+    #messages = get_messages(connection, conversation)
+    #print(messages)
+    
 
 #11th function to send the qury to the DB for private messages
 def execution_2(connection, sender, private_message, dm_id):
-    #connection = connect_db()
-
     save_message(connection, nicknames[sender], private_message, dm_id)
 
-    messages = get_messages(connection)
-    print(messages)
-
-
+    #messages = get_messages(connection, dm_id)
+    #print(messages)
 
 
 #1st function 
@@ -231,10 +225,29 @@ async def handle_client(reader, writer):
 
                 await move_client(writer,room_name)    # calls 2nd function
                 
+                history = get_messages(connect_db(), room_name)
+
+                if not history:
+                   reply = "----No previous messages.----\n"
+                   writer.write(reply.encode())
+                   await writer.drain()
+                else:
+                    history_header = f"----Previous messages in {room_name}----\n"
+                    writer.write(history_header.encode())
+                    await writer.drain()
+
+
+                    for row in history:
+                        message_id, sender, message, conversation, timestamp = row
+                        history_message = f"{sender} : {message}\n"
+                        writer.write(history_message.encode())
+                        await writer.drain()
+
                 join_message = f"{nicknames[writer]} joined : {room_name}\n"
 
                 await brodcast_to_room(room_name, join_message) # calls 3rd function
-
+                
+                continue
                 
             current_room = await find_current_room(writer) #calls 1st function
 
@@ -271,11 +284,33 @@ async def handle_client(reader, writer):
                     continue
 
                 dm_id = await create_private_chat(writer, target_writer) # calls 10th function
+
+                
+                history = get_messages(connect_db(), dm_id)
+
+                if not history:
+                   reply = "----No previous messages.----\n"
+                   writer.write(reply.encode())
+                   await writer.drain()
+                else:
+                    history_header = f"----Previous messages in DM with {target_nickname}----\n"
+                    writer.write(history_header.encode())
+                    await writer.drain()
+
+                    for row in history:
+                        message_id, sender, message, conversation, timestamp = row
+                        history_message = f"{sender} : {message}\n"
+                        writer.write(history_message.encode())
+                        await writer.drain()
+
+
                 dm_message = f"[DM from {nicknames[writer]}] : {private_message}\n"
 
                 execution_2(connect_db(), writer, private_message, dm_id) # calls 11th function private messages
+
                 target_writer.write(dm_message.encode())
                 await target_writer.drain()
+
                 continue
 
 
