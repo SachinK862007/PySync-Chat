@@ -51,33 +51,27 @@ def save_message(connection, sender, message, conversation):
     connection.commit()
 
 #function to retrieve the chat history from the DB
-def get_messages(connection):
+def get_messages(connection, conversation):
     cursor = connection.cursor()
-    cursor.execute("SELECT * FROM messages")
+    cursor.execute("SELECT * FROM messages WHERE conversation = ?", (conversation,))
     messages = cursor.fetchall()
     return messages
 
 
 #11th function to send the qury to the DB for public rooms
 def execution(connection, sender, message, conversation):
-    #connection = connect_db()
-
     save_message(connection, nicknames[sender], message, conversation)
 
-    messages = get_messages(connection)
-    print(messages)
-
+    #messages = get_messages(connection, conversation)
+    #print(messages)
+    
 
 #11th function to send the qury to the DB for private messages
 def execution_2(connection, sender, private_message, dm_id):
-    #connection = connect_db()
-
     save_message(connection, nicknames[sender], private_message, dm_id)
 
-    messages = get_messages(connection)
-    print(messages)
-
-
+    #messages = get_messages(connection, dm_id)
+    #print(messages)
 
 
 #1st function 
@@ -234,7 +228,8 @@ async def handle_client(reader, writer):
                 join_message = f"{nicknames[writer]} joined : {room_name}\n"
 
                 await brodcast_to_room(room_name, join_message) # calls 3rd function
-
+                
+                continue
                 
             current_room = await find_current_room(writer) #calls 1st function
 
