@@ -1,5 +1,4 @@
 import asyncio
-
 import sqlite3
 from .config import HOST, PORT
 
@@ -20,7 +19,7 @@ commands = {
     "/exit" : "Exit the chat. Usage : /exit"
 }
 
-#storage for chat history
+#storage for chat history "connection"
 def connect_db():
     connection = sqlite3.connect("pysync_chat.db")
     cursor = connection.cursor()
@@ -38,6 +37,45 @@ def connect_db():
     connection.commit()
     return connection
 
+
+
+#function to save the chat in the DB
+def save_message(connection, sender, message, conversation):
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        INSERT INTO messages (sender, message, conversation, timestamp)
+        VALUES (?, ?, ?, datetime('now'))
+    """, (sender, message, conversation))
+
+    connection.commit()
+
+#function to retrieve the chat history from the DB
+def get_messages(connection):
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM messages")
+    messages = cursor.fetchall()
+    return messages
+
+
+#11th function to send the qury to the DB for public rooms
+def execution(connection, sender, message, conversation):
+    #connection = connect_db()
+
+    save_message(connection, nicknames[sender], message, conversation)
+
+    messages = get_messages(connection)
+    print(messages)
+
+
+#11th function to send the qury to the DB for private messages
+def execution_2(connection, sender, private_message, dm_id):
+    #connection = connect_db()
+
+    save_message(connection, nicknames[sender], private_message, dm_id)
+
+    messages = get_messages(connection)
+    print(messages)
 
 
 
@@ -235,7 +273,7 @@ async def handle_client(reader, writer):
                 dm_id = await create_private_chat(writer, target_writer) # calls 10th function
                 dm_message = f"[DM from {nicknames[writer]}] : {private_message}\n"
 
-                
+                execution_2(connect_db(), writer, private_message, dm_id) # calls 11th function private messages
                 target_writer.write(dm_message.encode())
                 await target_writer.drain()
                 continue
@@ -243,6 +281,8 @@ async def handle_client(reader, writer):
 
             if message.upper() == '/EXIT':
                 break
+
+            execution(connect_db(), writer, message, current_room) # calls 11th function public messages
 
             broadcast_message = f"{nicknames[writer]}: {message}\n"
 
@@ -278,7 +318,9 @@ async def start_server():
 
     async with server:
         await server.serve_forever()
-    
+
+
+
 
 
 if __name__ == '__main__':
