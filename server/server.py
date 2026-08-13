@@ -1,4 +1,6 @@
 import asyncio
+
+import sqlite3
 from .config import HOST, PORT
 
 connected_clients = []
@@ -17,6 +19,27 @@ commands = {
     "/users" : "Display users in the current room. Usage : /users",
     "/exit" : "Exit the chat. Usage : /exit"
 }
+
+#storage for chat history
+def connect_db():
+    connection = sqlite3.connect("pysync_chat.db")
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS messages(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sender TEXT,
+            message TEXT,
+            conversation TEXT,
+            timestamp TEXT
+        )
+    """)
+
+    connection.commit()
+    return connection
+
+
+
 
 
 #1st function 
@@ -132,6 +155,7 @@ async def create_private_chat(writer, target_writer):
 #main function that call above functions
 async def handle_client(reader, writer):
 
+
     connected_clients.append(writer)
 
     rooms["general"].append(writer)
@@ -243,6 +267,10 @@ async def start_server():
     print("Preparing server configuration...")
     print(f"HOST : {HOST}")
     print(f"PORT : {PORT}")
+
+    
+    connection = connect_db()
+    print("Database connected successfully !")
 
     server = await asyncio.start_server(handle_client, HOST, PORT)
 
