@@ -151,13 +151,13 @@ async def handle_users(writer):
 
 
 
-#8th function
-async def find_user_by_nickname(target_nickname):
-    for writer, nickname in nicknames.items():
-        if nickname.upper() == target_nickname.upper():
-            return writer
-
-    return None
+##8th function
+#async def find_user_by_nickname(target_nickname):
+#    for writer, nickname in nicknames.items():
+#        if nickname.upper() == target_nickname.upper():
+#            return writer
+#
+#    return None
 
 
 
@@ -172,15 +172,15 @@ async def find_private_chat(writer, target_writer):
 
 
 
-#10th function
-async def create_private_chat(writer, target_writer):
-    existing_dm = await find_private_chat(writer, target_writer)
-    if existing_dm is not None:
-        return existing_dm
-
-    dm_id = f"dm_{len(private_chats) + 1}"
-    private_chats[dm_id] = [writer, target_writer]
-    return dm_id
+##10th function
+#async def create_private_chat(writer, target_writer):
+#    existing_dm = await find_private_chat(writer, target_writer)
+#    if existing_dm is not None:
+#        return existing_dm
+#
+#    dm_id = f"dm_{len(private_chats) + 1}"
+#    private_chats[dm_id] = [writer, target_writer]
+#    return dm_id
 
 
 
