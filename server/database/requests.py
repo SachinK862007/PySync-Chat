@@ -1,15 +1,17 @@
 from server.database.connection import get_connection
 
-def create_connection_table():
-    
+
+def create_requests_table():
+
     connection = get_connection()
     cursor = connection.cursor()
 
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS conversations(
+        CREATE TABLE IF NOT EXISTS dm_requests(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            conversation_id TEXT UNIQUE NOT NULL,
-            type TEXT NOT NULL
+            sender TEXT NOT NULL,
+            receiver TEXT NOT NULL,
+            status TEXT NOT NULL
         )
     """)
 
@@ -19,5 +21,5 @@ def create_connection_table():
 
 
 if __name__ == '__main__':
-    create_connection_table()
-    print("connection table created successfully !")
+    create_requests_table()
+    print("DM requests table created successfully !")
