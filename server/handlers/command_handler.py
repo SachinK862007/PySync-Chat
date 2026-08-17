@@ -69,5 +69,13 @@ if __name__ == "__main__":
         "dm_2": ["John", "Rahul"]
     }
 
-    print(handle_dm(user_1, user_2, private_chats))
-    print(handle_dm("Sachin", "John", private_chats))
+    requests = []
+
+    print(handle_dm(user_1, user_2, private_chats, requests))
+    print(requests)
+
+    print(handle_dm("Sachin", "John", private_chats, requests))
+    print(requests)
+
+    print(handle_dm("Sachin", "John", private_chats, requests))
+    print(requests)
