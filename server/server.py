@@ -19,43 +19,43 @@ commands = {
     "/exit" : "Exit the chat. Usage : /exit"
 }
 
-#storage for chat history "connection"
-def connect_db():
-    connection = sqlite3.connect("pysync_chat.db")
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS messages(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            sender TEXT,
-            message TEXT,
-            conversation TEXT,
-            timestamp TEXT
-        )
-    """)
-
-    connection.commit()
-    return connection
-
-
-
-#function to save the chat in the DB
-def save_message(connection, sender, message, conversation):
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        INSERT INTO messages (sender, message, conversation, timestamp)
-        VALUES (?, ?, ?, datetime('now'))
-    """, (sender, message, conversation))
-
-    connection.commit()
-
-#function to retrieve the chat history from the DB
-def get_messages(connection, conversation):
-    cursor = connection.cursor()
-    cursor.execute("SELECT * FROM messages WHERE conversation = ? ORDER BY id ASC", (conversation,))
-    messages = cursor.fetchall()
-    return messages
+##storage for chat history "connection"
+#def connect_db():
+#    connection = sqlite3.connect("pysync_chat.db")
+#    cursor = connection.cursor()
+#
+#    cursor.execute("""
+#        CREATE TABLE IF NOT EXISTS messages(
+#            id INTEGER PRIMARY KEY AUTOINCREMENT,
+#            sender TEXT,
+#            message TEXT,
+#            conversation TEXT,
+#            timestamp TEXT
+#        )
+#    """)
+#
+#    connection.commit()
+#    return connection
+#
+#
+#
+##function to save the chat in the DB
+#def save_message(connection, sender, message, conversation):
+#    cursor = connection.cursor()
+#
+#    cursor.execute("""
+#        INSERT INTO messages (sender, message, conversation, timestamp)
+#        VALUES (?, ?, ?, datetime('now'))
+#    """, (sender, message, conversation))
+#
+#    connection.commit()
+#
+##function to retrieve the chat history from the DB
+#def get_messages(connection, conversation):
+#    cursor = connection.cursor()
+#    cursor.execute("SELECT * FROM messages WHERE conversation = ? ORDER BY id ASC", (conversation,))
+#    messages = cursor.fetchall()
+#    return messages
 
 
 #11th function to send the qury to the DB for public rooms
@@ -151,13 +151,13 @@ async def handle_users(writer):
 
 
 
-#8th function
-async def find_user_by_nickname(target_nickname):
-    for writer, nickname in nicknames.items():
-        if nickname.upper() == target_nickname.upper():
-            return writer
-
-    return None
+##8th function
+#async def find_user_by_nickname(target_nickname):
+#    for writer, nickname in nicknames.items():
+#        if nickname.upper() == target_nickname.upper():
+#            return writer
+#
+#    return None
 
 
 
@@ -172,15 +172,15 @@ async def find_private_chat(writer, target_writer):
 
 
 
-#10th function
-async def create_private_chat(writer, target_writer):
-    existing_dm = await find_private_chat(writer, target_writer)
-    if existing_dm is not None:
-        return existing_dm
-
-    dm_id = f"dm_{len(private_chats) + 1}"
-    private_chats[dm_id] = [writer, target_writer]
-    return dm_id
+##10th function
+#async def create_private_chat(writer, target_writer):
+#    existing_dm = await find_private_chat(writer, target_writer)
+#    if existing_dm is not None:
+#        return existing_dm
+#
+#    dm_id = f"dm_{len(private_chats) + 1}"
+#    private_chats[dm_id] = [writer, target_writer]
+#    return dm_id
 
 
 
