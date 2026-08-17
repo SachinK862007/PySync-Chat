@@ -19,7 +19,7 @@ def create_private_chat(user_1, user_2, private_chats):
 
 
 
-def find_private_chat(user_1, user_2, private_chat):
+def find_private_chat(user_1, user_2, private_chats):
 
     for conversation_id, users in private_chats.items():
         if user_1 in users and user_2 in users:
