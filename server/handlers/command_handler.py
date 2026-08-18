@@ -7,6 +7,20 @@ from server.services.request_service import create_request
 from server.services.request_service import respond_to_request
 
 
+
+COMMANDS = {
+    "/help",
+    "/rooms",
+    "/users",
+    "/join",
+    "/dm",
+    "/accept",
+    "/reject",
+    "/leave",
+    "/exit"
+}
+
+
 def handle_help():
     
     return """
@@ -35,6 +49,9 @@ def handle_rooms(rooms):
 
 def handle_join(writer, room_name, rooms):
 
+    if not room_name:
+        return "Usage : /join <room_name>"
+
     joined = join_room(writer, room_name, rooms)
 
     if not joined:
@@ -53,7 +70,12 @@ def handle_leave(writer, rooms):
 
 
 
+
 def handle_dm(user_1, user_2, private_chats,requests):
+
+    if not user_2:
+        return "Usage : /dm <user_name>"
+
     conversation_id = find_private_chat(user_1, user_2, private_chats)
 
     if conversation_id:
@@ -69,6 +91,10 @@ def handle_dm(user_1, user_2, private_chats,requests):
 
 
 def handle_accept(receiver, sender, requests, private_chats):
+
+    if not sender:
+        return "Usage : /accept <user_name>"
+
     accepted = respond_to_request(sender, receiver, "accept", requests)
 
     if not accepted:
@@ -82,6 +108,10 @@ def handle_accept(receiver, sender, requests, private_chats):
 
 
 def handle_reject(receiver, sender, requests):
+
+    if not sender:
+        return "Usage : /reject <user_name>"
+
     rejected = respond_to_request(sender, receiver, "reject", requests)
     if rejected:
         return f"DM request from {sender} rejected"
@@ -97,36 +127,89 @@ def handle_exit():
         return "exit"
 
     return "cancel"
-    
+
+
+
+
+def validate_command(command):
+
+    if command not in COMMANDS:
+        return False
+
+    return True
+
+
+
+def dispatch_command(command, argument, writer, users, rooms, private_chats, requests):
+    pass
+
+    #if command == "/help":
+    #    return handle_help()
+#
+    #if command == "/rooms":
+    #    return handle_rooms()
+#
+    #if command == "/users":
+    #    return handle_users()
+#
+    #if command == "/join":
+    #    return handle_join(argument)
+#
+    #if command == "/leave":
+    #    return handle_leave()
+#
+    #if command == "/dm":
+    #    return handle_dm(argument)
+#
+    #if command == "/accept":
+    #    return handle_accept(argument)
+#
+    #if command == "/reject":
+    #    return handle_reject(argument)
+#
+    #if command == "/exit":
+    #    return handle_exit()
+#
+    #return "Unknown command"
+
+
+
+
+def parse_command(message):
+    parts = message.split(maxsplit = 1)
+
+    command = parts[0].lower()
+
+    argument = None
+
+    if len(parts) > 1:
+        argument = parts[1]
+
+    return command, argument
+
+
+
+
+
 
 
 
 
 if __name__ == "__main__":
-    requests = [
-        {
-            "sender": "Sachin",
-            "receiver": "John",
-            "status": "pending"
-        }
-    ]
 
-    private_chats = {}
+    print("\n---- Testing Command Validation ----")
 
-    print(handle_accept(
-        "John",
-        "Sachin",
-        requests,
-        private_chats
-    ))
+    print(validate_command("/join"))
+    print(validate_command("/dm"))
+    print(validate_command("/help"))
 
-    print(requests)
-    print(private_chats)
+    print(validate_command("/hello"))
+    print(validate_command("/random"))
 
-    result = handle_exit()
+    print("\n")
 
-    print("Result:", result)
+    command, argument = parse_command("/hello Sachin")
 
-    assert result == "exit"
-
-    print("Test passed")
+    print("Command:", command)
+    print("Argument:", argument)
+    print("Valid:", validate_command(command))
