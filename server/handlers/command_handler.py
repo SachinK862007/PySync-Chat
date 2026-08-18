@@ -140,37 +140,36 @@ def validate_command(command):
 
 
 
-def dispatch_command(command, argument, writer, users, rooms, private_chats, requests):
-    pass
+def dispatch_command(command, argument, writer, current_user, users, rooms, private_chats, requests):
 
-    #if command == "/help":
-    #    return handle_help()
-#
-    #if command == "/rooms":
-    #    return handle_rooms()
-#
-    #if command == "/users":
-    #    return handle_users()
-#
-    #if command == "/join":
-    #    return handle_join(argument)
-#
-    #if command == "/leave":
-    #    return handle_leave()
-#
-    #if command == "/dm":
-    #    return handle_dm(argument)
-#
-    #if command == "/accept":
-    #    return handle_accept(argument)
-#
-    #if command == "/reject":
-    #    return handle_reject(argument)
-#
-    #if command == "/exit":
-    #    return handle_exit()
-#
-    #return "Unknown command"
+    if command == "/help":
+        return handle_help()
+
+    if command == "/rooms":
+        return handle_rooms(rooms)
+
+    if command == "/users":
+        return handle_users(users)
+
+    if command == "/join":
+        return handle_join(writer, argument, rooms)
+
+    if command == "/leave":
+        return handle_leave(writer, rooms)
+
+    if command == "/dm":
+        return handle_dm(current_user, argument, private_chats, requests)
+
+    if command == "/accept":
+        return handle_accept(current_user, argument, requests, private_chats)
+
+    if command == "/reject":
+        return handle_reject(current_user, argument, requests)
+
+    if command == "/exit":
+        return handle_exit()
+
+    return "Unknown command"
 
 
 
@@ -197,19 +196,573 @@ def parse_command(message):
 
 if __name__ == "__main__":
 
-    print("\n---- Testing Command Validation ----")
 
-    print(validate_command("/join"))
-    print(validate_command("/dm"))
-    print(validate_command("/help"))
 
-    print(validate_command("/hello"))
-    print(validate_command("/random"))
+    users = {
+        "Sachin": "writer_1",
+        "John": "writer_2",
+        "Deku": "writer_3"
+    }
 
-    print("\n")
+    rooms = {
+        "general": [],
+        "scuba": []
+    }
+
+    private_chats = {}
+
+    requests = []
+
+    writer = "writer_1"
+
+    current_user = "Sachin"
+
+
+
+
+    print("\n========== TEST /help ==========")
+
+    print(handle_help())
+
+
+    print("\n========== TEST /users ==========")
+
+    print(handle_users(users))
+
+
+    print("\n========== TEST /rooms ==========")
+
+    print(handle_rooms(rooms))
+
+
+
+
+    print("\n========== TEST /join ==========")
+
+    print(
+        handle_join(
+            writer,
+            "scuba",
+            rooms
+        )
+    )
+
+
+
+
+    print("\n========== TEST /join duplicate ==========")
+
+    print(
+        handle_join(
+            writer,
+            "scuba",
+            rooms
+        )
+    )
+
+
+
+
+    print("\n========== TEST /leave ==========")
+
+    print(
+        handle_leave(
+            writer,
+            rooms
+        )
+    )
+
+
+
+
+    print("\n========== TEST /leave again ==========")
+
+    print(
+        handle_leave(
+            writer,
+            rooms
+        )
+    )
+
+
+
+
+    requests = []
+    private_chats = {}
+
+    print("\n========== TEST /dm ==========")
+
+    print(
+        handle_dm(
+            "Sachin",
+            "John",
+            private_chats,
+            requests
+        )
+    )
+
+    print("Requests:", requests)
+
+
+
+
+    print("\n========== TEST /dm duplicate ==========")
+
+    print(
+        handle_dm(
+            "Sachin",
+            "John",
+            private_chats,
+            requests
+        )
+    )
+
+    print("Requests:", requests)
+
+
+
+
+    requests = [
+        {
+            "sender": "Sachin",
+            "receiver": "John",
+            "status": "pending"
+        }
+    ]
+
+    private_chats = {}
+
+    print("\n========== TEST /accept ==========")
+
+    print(
+        handle_accept(
+            "John",
+            "Sachin",
+            requests,
+            private_chats
+        )
+    )
+
+    print("Requests:", requests)
+    print("Private chats:", private_chats)
+
+
+
+
+    requests = [
+        {
+            "sender": "Sachin",
+            "receiver": "John",
+            "status": "pending"
+        }
+    ]
+
+    print("\n========== TEST /reject ==========")
+
+    print(
+        handle_reject(
+            "John",
+            "Sachin",
+            requests
+        )
+    )
+
+    print("Requests:", requests)
+
+
+
+
+    print("\n========== TEST /exit ==========")
+
+    result = handle_exit()
+
+    print("Result:", result)
+
+
+
+
+    print("\n========== TEST ARGUMENT VALIDATION ==========")
+
+    print(
+        handle_join(
+            writer,
+            "",
+            rooms
+        )
+    )
+
+    print(
+        handle_dm(
+            "Sachin",
+            "",
+            private_chats,
+            requests
+        )
+    )
+
+    print(
+        handle_accept(
+            "John",
+            "",
+            requests,
+            private_chats
+        )
+    )
+
+    print(
+        handle_reject(
+            "John",
+            "",
+            requests
+        )
+    )
+
+
+
+
+    print("\n========== TEST COMMAND PARSER ==========")
+
+    print(
+        parse_command("/join scuba")
+    )
+
+    print(
+        parse_command("/dm John")
+    )
+
+    print(
+        parse_command("/accept Sachin")
+    )
+
+    print(
+        parse_command("/rooms")
+    )
+
+    print(
+        parse_command("/help")
+    )
+
+    print(
+        parse_command("/join my room")
+    )
+
+
+
+
+    print("\n========== TEST COMMAND VALIDATION ==========")
+
+    print(
+        validate_command("/help")
+    )
+
+    print(
+        validate_command("/join")
+    )
+
+    print(
+        validate_command("/dm")
+    )
+
+    print(
+        validate_command("/exit")
+    )
+
+    print(
+        validate_command("/hello")
+    )
+
+    print(
+        validate_command("/random")
+    )
+
+
+
+
+    print("\n========== TEST PARSER + VALIDATOR ==========")
+
+    command, argument = parse_command("/join scuba")
+
+    print("Command:", command)
+    print("Argument:", argument)
+    print("Valid:", validate_command(command))
+
 
     command, argument = parse_command("/hello Sachin")
 
     print("Command:", command)
     print("Argument:", argument)
     print("Valid:", validate_command(command))
+
+
+
+
+    print("\n========== DISPATCHER /help ==========")
+
+    print(
+        dispatch_command(
+            "/help",
+            None,
+            writer,
+            current_user,
+            users,
+            rooms,
+            private_chats,
+            requests
+        )
+    )
+
+
+
+
+    print("\n========== DISPATCHER /rooms ==========")
+
+    print(
+        dispatch_command(
+            "/rooms",
+            None,
+            writer,
+            current_user,
+            users,
+            rooms,
+            private_chats,
+            requests
+        )
+    )
+
+
+
+
+    print("\n========== DISPATCHER /users ==========")
+
+    print(
+        dispatch_command(
+            "/users",
+            None,
+            writer,
+            current_user,
+            users,
+            rooms,
+            private_chats,
+            requests
+        )
+    )
+
+
+
+
+    print("\n========== DISPATCHER /join ==========")
+
+    print(
+        dispatch_command(
+            "/join",
+            "scuba",
+            writer,
+            current_user,
+            users,
+            rooms,
+            private_chats,
+            requests
+        )
+    )
+
+
+
+
+    print("\n========== DISPATCHER /leave ==========")
+
+    print(
+        dispatch_command(
+            "/leave",
+            None,
+            writer,
+            current_user,
+            users,
+            rooms,
+            private_chats,
+            requests
+        )
+    )
+
+
+
+
+    requests = []
+
+    print("\n========== DISPATCHER /dm ==========")
+
+    print(
+        dispatch_command(
+            "/dm",
+            "John",
+            writer,
+            current_user,
+            users,
+            rooms,
+            private_chats,
+            requests
+        )
+    )
+
+    print("Requests:", requests)
+
+
+
+
+    requests = [
+        {
+            "sender": "Sachin",
+            "receiver": "John",
+            "status": "pending"
+        }
+    ]
+
+    private_chats = {}
+
+    print("\n========== DISPATCHER /accept ==========")
+
+    print(
+        dispatch_command(
+            "/accept",
+            "Sachin",
+            "writer_2",
+            "John",
+            users,
+            rooms,
+            private_chats,
+            requests
+        )
+    )
+
+    print("Requests:", requests)
+    print("Private chats:", private_chats)
+
+
+
+
+    requests = [
+        {
+            "sender": "Sachin",
+            "receiver": "John",
+            "status": "pending"
+        }
+    ]
+
+    print("\n========== DISPATCHER /reject ==========")
+
+    print(
+        dispatch_command(
+            "/reject",
+            "Sachin",
+            "writer_2",
+            "John",
+            users,
+            rooms,
+            private_chats,
+            requests
+        )
+    )
+
+    print("Requests:", requests)
+
+
+
+
+    print("\n========== DISPATCHER /exit ==========")
+
+    result = dispatch_command(
+        "/exit",
+        None,
+        writer,
+        current_user,
+        users,
+        rooms,
+        private_chats,
+        requests
+    )
+
+    print("Result:", result)
+
+
+
+
+    print("\n========== DISPATCHER ARGUMENT VALIDATION ==========")
+
+    print(
+        dispatch_command(
+            "/join",
+            None,
+            writer,
+            current_user,
+            users,
+            rooms,
+            private_chats,
+            requests
+        )
+    )
+
+    print(
+        dispatch_command(
+            "/dm",
+            None,
+            writer,
+            current_user,
+            users,
+            rooms,
+            private_chats,
+            requests
+        )
+    )
+
+    print(
+        dispatch_command(
+            "/accept",
+            None,
+            writer,
+            current_user,
+            users,
+            rooms,
+            private_chats,
+            requests
+        )
+    )
+
+    print(
+        dispatch_command(
+            "/reject",
+            None,
+            writer,
+            current_user,
+            users,
+            rooms,
+            private_chats,
+            requests
+        )
+    )
+
+
+
+
+    print("\n========== UNKNOWN COMMAND ==========")
+
+    command, argument = parse_command("/hello Sachin")
+
+    if not validate_command(command):
+        print("Unknown command:", command)
+    else:
+        print(
+            dispatch_command(
+                command,
+                argument,
+                writer,
+                current_user,
+                users,
+                rooms,
+                private_chats,
+                requests
+            )
+        )
+
+
+    print("\n==========================================")
+    print("       ALL TESTS FINISHED")
+    print("==========================================")
