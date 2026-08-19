@@ -1,3 +1,5 @@
+from .handlers.command_handler import dispatch_command
+
 import asyncio
 import sqlite3
 from .config import HOST, PORT
