@@ -8,6 +8,7 @@ connected_clients = []
 nicknames = {}
 private_chats = {}
 active_dms = {}
+requests = []
 rooms = {
     "general": []
 }
@@ -21,43 +22,43 @@ commands = {
     "/exit" : "Exit the chat. Usage : /exit"
 }
 
-##storage for chat history "connection"
-#def connect_db():
-#    connection = sqlite3.connect("pysync_chat.db")
-#    cursor = connection.cursor()
-#
-#    cursor.execute("""
-#        CREATE TABLE IF NOT EXISTS messages(
-#            id INTEGER PRIMARY KEY AUTOINCREMENT,
-#            sender TEXT,
-#            message TEXT,
-#            conversation TEXT,
-#            timestamp TEXT
-#        )
-#    """)
-#
-#    connection.commit()
-#    return connection
-#
-#
-#
-##function to save the chat in the DB
-#def save_message(connection, sender, message, conversation):
-#    cursor = connection.cursor()
-#
-#    cursor.execute("""
-#        INSERT INTO messages (sender, message, conversation, timestamp)
-#        VALUES (?, ?, ?, datetime('now'))
-#    """, (sender, message, conversation))
-#
-#    connection.commit()
-#
-##function to retrieve the chat history from the DB
-#def get_messages(connection, conversation):
-#    cursor = connection.cursor()
-#    cursor.execute("SELECT * FROM messages WHERE conversation = ? ORDER BY id ASC", (conversation,))
-#    messages = cursor.fetchall()
-#    return messages
+#storage for chat history "connection"
+def connect_db():
+    connection = sqlite3.connect("pysync_chat.db")
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS messages(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sender TEXT,
+            message TEXT,
+            conversation TEXT,
+            timestamp TEXT
+        )
+    """)
+
+    connection.commit()
+    return connection
+
+
+
+#function to save the chat in the DB
+def save_message(connection, sender, message, conversation):
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        INSERT INTO messages (sender, message, conversation, timestamp)
+        VALUES (?, ?, ?, datetime('now'))
+    """, (sender, message, conversation))
+
+    connection.commit()
+
+#function to retrieve the chat history from the DB
+def get_messages(connection, conversation):
+    cursor = connection.cursor()
+    cursor.execute("SELECT * FROM messages WHERE conversation = ? ORDER BY id ASC", (conversation,))
+    messages = cursor.fetchall()
+    return messages
 
 
 #11th function to send the qury to the DB for public rooms
@@ -255,15 +256,56 @@ async def handle_client(reader, writer):
 
 
             if message.upper() == "/HELP":
-                await handle_help(writer) # calls 5th function
+
+                reply = dispatch_command(
+                    "/help",
+                    None,
+                    writer,
+                    nicknames[writer],
+                    nicknames,
+                    rooms,
+                    private_chats,
+                    requests
+                )
+
+                writer.write(reply.encode())
+                await writer.drain() 
+
                 continue
 
             if message.upper() == "/ROOMS":
-                await handle_rooms(writer) # calls 6th function
+                
+                reply = dispatch_command(
+                    "/rooms",
+                    None,
+                    writer,
+                    nicknames[writer],
+                    nicknames,
+                    rooms,
+                    private_chats,
+                    requests
+                )
+
+                writer.write(reply.encode())
+                await writer.drain() 
+
                 continue
 
             if message.upper() == "/USERS":
-                await handle_users(writer) # calls 7th function
+                reply = dispatch_command(
+                    "/users",
+                    None,
+                    writer,
+                    nicknames[writer],
+                    nicknames,
+                    rooms,
+                    private_chats,
+                    requests
+                )
+
+                writer.write(reply.encode())
+                await writer.drain() 
+
                 continue
 
             if message.upper() == "/DM" or message.upper().startswith("/DM "):

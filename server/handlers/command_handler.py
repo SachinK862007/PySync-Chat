@@ -38,13 +38,33 @@ def handle_help():
     """
 
 
-def handle_users(users):
-    return list(users.keys())
+def handle_users(writer, rooms, nicknames):
+    current_room = None
+
+    for room_name, clients in rooms.items():
+        if writer in clients:
+            current_room = room_name
+            break
+
+    if current_room is None:
+        return "You are not in a room.\n"
+
+    users_message = f"Users in {current_room}\n"
+
+    for client in rooms[current_room]:
+        users_message += f"{nicknames[client]}\n"
+
+    return users_message
 
 
 
 def handle_rooms(rooms):
-    return list(rooms.keys())
+    rooms_message = "Available Rooms\n"
+
+    for room_name in rooms:
+        rooms_message += f"{room_name}\n"
+
+    return rooms_message
 
 
 def handle_join(writer, room_name, rooms):
@@ -149,7 +169,7 @@ def dispatch_command(command, argument, writer, current_user, users, rooms, priv
         return handle_rooms(rooms)
 
     if command == "/users":
-        return handle_users(users)
+        return handle_users(writer, rooms, users)
 
     if command == "/join":
         return handle_join(writer, argument, rooms)
