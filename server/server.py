@@ -338,29 +338,31 @@ async def handle_client(reader, writer):
 
 
             if message.upper() == "/DM" or message.upper().startswith("/DM "):
-                parts = message.split(maxsplit = 2)
 
+                parts = message.split(maxsplit=2)
+            
                 if len(parts) < 2:
-                    reply = "Usage: /dm <nickname> <message>\n"
+                    reply = "Usage: /dm <nickname>\n"
                     writer.write(reply.encode())
                     await writer.drain()
                     continue
-
+            
                 target_nickname = parts[1]
-                
-                target_nickname = None
-
+            
+                target_writer = None
+            
                 for client, nickname in nicknames.items():
+                
                     if nickname.lower() == target_nickname.lower():
                         target_writer = client
                         break
-
+            
                 if target_writer is None:
-                    reply = f"User {target_nickname} not found !\n"
+                    reply = f"User {target_nickname} not found!\n"
                     writer.write(reply.encode())
                     await writer.drain()
                     continue
-
+            
                 reply = dispatch_command(
                     "/dm",
                     target_nickname,
@@ -371,12 +373,12 @@ async def handle_client(reader, writer):
                     private_chats,
                     requests
                 )
-
-                writer.write(f"{replay}\n".encode())
+            
+                writer.write(f"{reply}\n".encode())
                 await writer.drain()
-
+            
                 continue
-
+            
 
 
 
