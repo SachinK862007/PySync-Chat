@@ -226,10 +226,10 @@ async def handle_client(reader, writer):
                     requests
                 )
 
-                writer.write(f"{replay}\n".encode())
+                writer.write(f"{reply}\n".encode())
                 await writer.drain()
 
-                if replay.startswaith("You are already"):
+                if reply.startswith("You are already"):
                     continue
                 
                 history = get_messages(connect_db(), room_name)
