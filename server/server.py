@@ -312,6 +312,31 @@ async def handle_client(reader, writer):
 
                 continue
 
+
+
+
+            if message.upper() == "/LEAVE":
+
+                reply = dispatch_command(
+                    "/leave",
+                    None,
+                    writer,
+                    nicknames[writer],
+                    nicknames,
+                    rooms,
+                    private_chats,
+                    requests
+                )
+
+                writer.write(f"{reply}\n".encode())
+                await writer.drain()
+
+                continue
+
+
+
+
+
             if message.upper() == "/DM" or message.upper().startswith("/DM "):
                 parts = message.split(maxsplit = 2)
                 if len(parts) < 3:
