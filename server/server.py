@@ -339,16 +339,21 @@ async def handle_client(reader, writer):
 
             if message.upper() == "/DM" or message.upper().startswith("/DM "):
                 parts = message.split(maxsplit = 2)
-                if len(parts) < 3:
+
+                if len(parts) < 2:
                     reply = "Usage: /dm <nickname> <message>\n"
                     writer.write(reply.encode())
                     await writer.drain()
                     continue
 
                 target_nickname = parts[1]
-                private_message = parts[2]
+                
+                target_nickname = None
 
-                target_writer = await find_user_by_nickname(target_nickname) # calls 8th function
+                for client, nickname in nicknames.items():
+                    if nickname.lower() == target_nickname.lower():
+                        target_writer = client
+                        break
 
                 if target_writer is None:
                     reply = f"User {target_nickname} not found !\n"
@@ -356,39 +361,110 @@ async def handle_client(reader, writer):
                     await writer.drain()
                     continue
 
-                dm_id = await create_private_chat(writer, target_writer) # calls 10th function
+                reply = dispatch_command(
+                    "/dm",
+                    target_nickname,
+                    writer,
+                    nicknames[writer],
+                    nicknames,
+                    rooms,
+                    private_chats,
+                    requests
+                )
 
-                
-                history = get_messages(connect_db(), dm_id)
-
-                if not history:
-                   reply = "----No previous messages.----\n"
-                   writer.write(reply.encode())
-                   await writer.drain()
-                else:
-                    history_header = f"----Previous messages in DM with {target_nickname}----\n"
-                    writer.write(history_header.encode())
-                    await writer.drain()
-
-                    for row in history:
-                        message_id, sender, message, conversation, timestamp = row
-                        history_message = f"{sender} : {message}\n"
-                        writer.write(history_message.encode())
-                        await writer.drain()
-
-
-                dm_message = f"[DM from {nicknames[writer]}] : {private_message}\n"
-
-                execution_2(connect_db(), writer, private_message, dm_id) # calls 11th function private messages
-
-                target_writer.write(dm_message.encode())
-                await target_writer.drain()
+                writer.write(f"{replay}\n".encode())
+                await writer.drain()
 
                 continue
 
 
+
+
+            if message.upper() == "/ACCEPT" or message.upper().startswith("/ACCEPT "):
+
+                parts = message.split(maxsplit = 1)
+
+                if len(parts) < 2:
+                    reply = "Usage: /accept <nick_name>"
+                    writer.write(reply.encode())
+                    await writer.drain()
+                    continue
+
+                sender_nickname = parts[1]
+
+                reply = dispatch_command(
+                    "/accept",
+                    sender_nickname,
+                    writer,
+                    nicknames[writer],
+                    nicknames,
+                    rooms,
+                    private_chats,
+                    requests
+                )
+
+                writer.write(f"{reply}\n".encode())
+                await writer.drain()
+
+                continue
+
+
+
+
+            if message.upper() == "/REJECT" or message.upper().startswith("/REJECT "):
+
+                parts = message.split(maxsplit = 1)
+
+                if len(parts) < 2:
+                    reply = "Usage: /reject <nick_name>"
+                    writer.write(reply.encode())
+                    await writer.drain()
+                    continue
+
+                sender_nickname = parts[1]
+
+                reply = dispatch_command(
+                    "/reject",
+                    sender_nickname,
+                    writer,
+                    nicknames[writer],
+                    nicknames,
+                    rooms,
+                    private_chats,
+                    requests
+                )
+
+                writer.write(f"{reply}\n".encode())
+                await writer.drain()
+
+                continue
+
+
+
+
+
             if message.upper() == '/EXIT':
-                break
+                
+                reply = dispatch_command(
+                    "/exit",
+                    writer,
+                    None,
+                    nicknames[writer],
+                    nicknames,
+                    rooms,
+                    private_chats,
+                    requests
+                )
+
+                if reply == "exit":
+                    break
+
+                writer.write(f"{reply}\n".encode())
+                await writer.drain()
+
+                continue
+
+
 
             execution(connect_db(), writer, message, current_room) # calls 11th function public messages
 

@@ -141,12 +141,7 @@ def handle_reject(receiver, sender, requests):
 
 
 def handle_exit():
-    choice = input("Do you confirm exit (YES) or (NO) : ")
-
-    if choice.upper() == "YES":
-        return "exit"
-
-    return "cancel"
+    return "exit"
 
 
 
