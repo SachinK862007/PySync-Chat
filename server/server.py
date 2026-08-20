@@ -215,18 +215,22 @@ async def handle_client(reader, writer):
 
                 room_name = message.split(maxsplit = 1)[1]
 
-                current_room = await find_current_room(writer) #calls 1st function
+                reply = dispatch_command(
+                    "/join",
+                    room_name,
+                    writer,
+                    nicknames[writer],
+                    nicknames,
+                    rooms,
+                    private_chats,
+                    requests
+                )
 
-                if current_room == room_name:
-                    reply = f"You are already in {room_name} room !\n"
-                    writer.write(reply.encode())
-                    await writer.drain()
+                writer.write(f"{replay}\n".encode())
+                await writer.drain()
+
+                if replay.startswaith("You are already"):
                     continue
-
-                if room_name not in rooms:
-                    rooms[room_name] = []
-
-                await move_client(writer,room_name)    # calls 2nd function
                 
                 history = get_messages(connect_db(), room_name)
 
