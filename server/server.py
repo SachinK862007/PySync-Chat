@@ -117,73 +117,7 @@ async def remove_client(writer):
 
 
 
-#5th function 
-async def handle_help(writer):
-    help_message = "Available Commands\n"
-    
-    for command, description in commands.items():
-        help_message += f"{command} : {description}\n"
-    
-    writer.write(help_message.encode())
-    await writer.drain()
 
-
-
-#6th function
-async def handle_rooms(writer):
-    rooms_message = "Available Rooms\n"
-    
-    for room_name in rooms:
-        rooms_message += f"{room_name}\n"
-
-    writer.write(rooms_message.encode())
-    await writer.drain()
-
-
-
-#7th function
-async def handle_users(writer):
-    current_room = await find_current_room(writer)
-    users_message = f"Users in {current_room}\n"
-
-    for client in rooms[current_room]:
-        users_message += f"{nicknames[client]}\n"
-
-    writer.write(users_message.encode())
-    await writer.drain()
-
-
-
-##8th function
-#async def find_user_by_nickname(target_nickname):
-#    for writer, nickname in nicknames.items():
-#        if nickname.upper() == target_nickname.upper():
-#            return writer
-#
-#    return None
-
-
-
-#9th function
-async def find_private_chat(writer, target_writer):
-    for dm_id, members in private_chats.items():
-        if writer in members and target_writer in members:
-         return dm_id
-
-    return None
-
-
-
-
-##10th function
-#async def create_private_chat(writer, target_writer):
-#    existing_dm = await find_private_chat(writer, target_writer)
-#    if existing_dm is not None:
-#        return existing_dm
-#
-#    dm_id = f"dm_{len(private_chats) + 1}"
-#    private_chats[dm_id] = [writer, target_writer]
-#    return dm_id
 
 
 
