@@ -1,3 +1,13 @@
+async def find_current_room(writer, rooms):
+    for room_name, clients in rooms.items():
+        if writer in clients:
+            return room_name
+
+    return None
+
+
+
+
 def create_room(room_name, rooms):
     
     if room_name in rooms:

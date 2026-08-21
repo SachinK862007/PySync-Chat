@@ -2,63 +2,30 @@ from .handlers.command_handler import dispatch_command
 from .services.database_service import connect_db
 from .services.database_service import save_message
 from .services.database_service import get_messages
+from .services.room_service import find_current_room
 
 import asyncio
-import sqlite3
 from .config import HOST, PORT
 
 connected_clients = []
 nicknames = {}
 private_chats = {}
-active_dms = {}
 requests = []
 rooms = {
     "general": []
 }
 
-commands = {
-    "/join" : "Join a specific room. Usage :  /join <room_name>",
-    "/dm" : "Send a private message. Usage : /dm <nickname> <message>",
-    "/help" : "Display available commands. Usage : /help",
-    "/rooms" : "Display available rooms. Usage : /rooms",
-    "/users" : "Display users in the current room. Usage : /users",
-    "/exit" : "Exit the chat. Usage : /exit"
-}
 
 
 
-#11th function to send the qury to the DB for public rooms
-def execution(connection, sender, message, conversation):
-    save_message(connection, nicknames[sender], message, conversation)
+##1st function 
+#async def find_current_room(writer):
+#    for room_name, clients in rooms.items():
+#        if writer in clients:
+#            return room_name
+#
+#    return None
 
-    #messages = get_messages(connection, conversation)
-    #print(messages)
-    
-
-#11th function to send the qury to the DB for private messages
-def execution_2(connection, sender, private_message, dm_id):
-    save_message(connection, nicknames[sender], private_message, dm_id)
-
-    #messages = get_messages(connection, dm_id)
-    #print(messages)
-
-
-#1st function 
-async def find_current_room(writer):
-    for room_name, clients in rooms.items():
-        if writer in clients:
-            return room_name
-
-    return None
-
-
-
-#2nd function
-async def move_client(writer,room_name):
-    current_room = await find_current_room(writer)
-
-    rooms[current_room].remove(writer)
-    rooms[room_name].append(writer)
 
 
 
@@ -73,7 +40,7 @@ async def brodcast_to_room(room_name, message, sender = None):
 
 #4th function
 async def remove_client(writer):
-    current_room = await find_current_room(writer)
+    current_room = await find_current_room(writer, rooms)
     if current_room is not None:
         rooms[current_room].remove(writer)
 
@@ -156,7 +123,7 @@ async def handle_client(reader, writer):
                 
                 continue
                 
-            current_room = await find_current_room(writer) #calls 1st function
+            current_room = await find_current_room(writer, rooms) #calls 1st function
 
 
             if message.upper() == "/HELP":
@@ -273,7 +240,8 @@ async def handle_client(reader, writer):
                     private_chats,
                     requests
                 )
-            
+
+                #save_message(connect_db(), nicknames[writer], private_message, dm_id)
                 writer.write(f"{reply}\n".encode())
                 await writer.drain()
             
@@ -368,7 +336,7 @@ async def handle_client(reader, writer):
 
 
 
-            execution(connect_db(), writer, message, current_room) # calls 11th function public messages
+            save_message(connect_db(), nicknames[writer], message, current_room)
 
             broadcast_message = f"{nicknames[writer]}: {message}\n"
 
