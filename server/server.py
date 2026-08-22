@@ -18,17 +18,6 @@ rooms = {
 
 
 
-##1st function 
-#async def find_current_room(writer):
-#    for room_name, clients in rooms.items():
-#        if writer in clients:
-#            return room_name
-#
-#    return None
-
-
-
-
 #3rd function
 async def brodcast_to_room(room_name, message, sender = None):
     for client in rooms[room_name]:
