@@ -51,8 +51,94 @@ async def send_reply(writer, reply):
 
 
 
-async def authenticate_client(reader, writer):
-    pass
+async def authenticate_client(reader, writer, connection):
+
+    await send_reply(writer, "Welcome to PySync Chat!")
+
+    while True:
+
+        await send_reply(writer, "Press ENTER to Login")
+
+        await send_reply(writer, "Type R to Register")
+
+        choice = await reader.readline()
+
+        if not choice:
+            return None
+
+        choice = choice.decode().strip().upper()
+
+        if choice == "":
+            choice = "LOGIN"
+            break
+
+        if choice == "R":
+
+            await send_reply(writer, "Choose username:")
+
+            username_data = await reader.readline()
+
+            if not username_data:
+                return None
+
+            username = username_data.decode().strip()
+
+            await send_reply(writer, "Choose password:")
+
+            password_data = await reader.readline()
+
+            if not password_data:
+                return None
+
+            password = password_data.decode().strip()
+
+            result = register_user(connection, username, password)
+
+            await send_reply(writer, result)
+
+            if result != "Registration Successful !\n":
+                return None
+
+            return username
+
+        await send_reply(writer, "Invalid option. Please press ENTER for Login or type R for Register.")
+
+
+
+    if choice == "LOGIN":
+
+        await send_reply(writer, "Username : ")
+
+        username_data = await reader.readline()
+
+        if not username_data:
+            return None
+
+        username = username_data.decode().strip()
+
+        await send_reply(writer, "Password : ")
+
+        password_data = await reader.readline()
+
+        if not password_data:
+            return None
+
+        password = password_data.decode().strip()
+
+        result = login_user(connection, username, password)
+
+        if result == "Login successfull":
+
+            await send_reply(writer, "Login successfull!")
+            return username
+
+        await send_reply(writer, result)
+
+        return None
+
+
+
+    
 
 
 
@@ -62,21 +148,22 @@ async def authenticate_client(reader, writer):
 #main function that call above functions
 async def handle_client(reader, writer, connection):
 
-    username = await authenticate_client(reader, writer)
+    username = await authenticate_client(reader, writer, connection)
 
     if username is None:
         return 
-    #connected_clients.append(writer)
-#
-    #rooms["general"].append(writer)
-#
+    
+    connected_clients.append(writer)
+
+    rooms["general"].append(writer)
+
     #nickname_data = await reader.readline()
-    #
+    
     #nickname = nickname_data.decode().strip()
-    #
-    #nicknames[writer] = nickname
-    #
-    #print(f"{nickname} Connected to general room !")
+    
+    nicknames[writer] = username
+    
+    print(f"{username} Connected to general room !")
     
     try:
         while True:
