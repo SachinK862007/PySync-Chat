@@ -16,6 +16,17 @@ def connect_db():
         )
     """)
 
+    #cursor.execute("DROP TABLE IF EXISTS users")
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            salt TEXT NOT NULL
+        )
+    """)
+
     connection.commit()
     return connection
 
