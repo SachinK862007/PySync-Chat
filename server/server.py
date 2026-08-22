@@ -4,6 +4,7 @@ from .services.database_service import save_message
 from .services.database_service import get_messages
 from .services.room_service import find_current_room
 
+
 import asyncio
 from .config import HOST, PORT
 
@@ -38,8 +39,9 @@ async def remove_client(writer):
         nicknames.pop(writer,None)
 
 
-
-
+async def send_reply(writer, reply):
+    writer.write(f"{reply}\n".encode())
+    await writer.drain()
 
 
 
@@ -128,8 +130,7 @@ async def handle_client(reader, writer, connection):
                     requests
                 )
 
-                writer.write(reply.encode())
-                await writer.drain() 
+                await send_reply(writer, reply) 
 
                 continue
 
@@ -146,8 +147,7 @@ async def handle_client(reader, writer, connection):
                     requests
                 )
 
-                writer.write(reply.encode())
-                await writer.drain() 
+                await send_reply(writer, reply) 
 
                 continue
 
@@ -163,8 +163,7 @@ async def handle_client(reader, writer, connection):
                     requests
                 )
 
-                writer.write(reply.encode())
-                await writer.drain() 
+                await send_reply(writer, reply) 
 
                 continue
 
@@ -184,8 +183,7 @@ async def handle_client(reader, writer, connection):
                     requests
                 )
 
-                writer.write(f"{reply}\n".encode())
-                await writer.drain()
+                await send_reply(writer, reply)
 
                 continue
 
@@ -199,8 +197,7 @@ async def handle_client(reader, writer, connection):
             
                 if len(parts) < 2:
                     reply = "Usage: /dm <nickname>\n"
-                    writer.write(reply.encode())
-                    await writer.drain()
+                    await send_reply(writer, reply))
                     continue
             
                 target_nickname = parts[1]
@@ -215,8 +212,7 @@ async def handle_client(reader, writer, connection):
             
                 if target_writer is None:
                     reply = f"User {target_nickname} not found!\n"
-                    writer.write(reply.encode())
-                    await writer.drain()
+                    await send_reply(writer, reply)
                     continue
             
                 reply = dispatch_command(
@@ -231,8 +227,7 @@ async def handle_client(reader, writer, connection):
                 )
 
                 #save_message(connect_db(), nicknames[writer], private_message, dm_id)
-                writer.write(f"{reply}\n".encode())
-                await writer.drain()
+                await send_reply(writer, reply)
             
                 continue
             
@@ -262,8 +257,7 @@ async def handle_client(reader, writer, connection):
                     requests
                 )
 
-                writer.write(f"{reply}\n".encode())
-                await writer.drain()
+                await send_reply(writer, reply)
 
                 continue
 
@@ -293,8 +287,7 @@ async def handle_client(reader, writer, connection):
                     requests
                 )
 
-                writer.write(f"{reply}\n".encode())
-                await writer.drain()
+                await send_reply(writer, reply)
 
                 continue
 
@@ -318,8 +311,7 @@ async def handle_client(reader, writer, connection):
                 if reply == "exit":
                     break
 
-                writer.write(f"{reply}\n".encode())
-                await writer.drain()
+                await send_reply(writer, reply)
 
                 continue
 
