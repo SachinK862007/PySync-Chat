@@ -1,8 +1,12 @@
+from .services.auth_service import login_user
+from .services.auth_service import register_user
+from .services.auth_service import get_user
 from .handlers.command_handler import dispatch_command
 from .services.database_service import connect_db
 from .services.database_service import save_message
 from .services.database_service import get_messages
 from .services.room_service import find_current_room
+
 
 
 import asyncio
@@ -45,21 +49,34 @@ async def send_reply(writer, reply):
 
 
 
+
+
+async def authenticate_client(reader, writer):
+    pass
+
+
+
+
+
+
 #main function that call above functions
 async def handle_client(reader, writer, connection):
 
+    username = await authenticate_client(reader, writer)
 
-    connected_clients.append(writer)
-
-    rooms["general"].append(writer)
-
-    nickname_data = await reader.readline()
-    
-    nickname = nickname_data.decode().strip()
-    
-    nicknames[writer] = nickname
-    
-    print(f"{nickname} Connected to general room !")
+    if username is None:
+        return 
+    #connected_clients.append(writer)
+#
+    #rooms["general"].append(writer)
+#
+    #nickname_data = await reader.readline()
+    #
+    #nickname = nickname_data.decode().strip()
+    #
+    #nicknames[writer] = nickname
+    #
+    #print(f"{nickname} Connected to general room !")
     
     try:
         while True:
@@ -197,7 +214,7 @@ async def handle_client(reader, writer, connection):
             
                 if len(parts) < 2:
                     reply = "Usage: /dm <nickname>\n"
-                    await send_reply(writer, reply))
+                    await send_reply(writer, reply)
                     continue
             
                 target_nickname = parts[1]
