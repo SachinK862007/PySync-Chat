@@ -44,7 +44,7 @@ async def remove_client(writer):
 
 
 #main function that call above functions
-async def handle_client(reader, writer):
+async def handle_client(reader, writer, connection):
 
 
     connected_clients.append(writer)
@@ -325,7 +325,17 @@ async def handle_client(reader, writer):
 
 
 
-            save_message(connect_db(), nicknames[writer], message, current_room)
+            if current_room is None:
+                reply = "You are not in a room.\n" 
+                writer.write(reply.encode())
+                await writer.drain()
+                continue
+
+
+
+
+            #connect_db()
+            save_message(connection, nicknames[writer], message, current_room)
 
             broadcast_message = f"{nicknames[writer]}: {message}\n"
 
@@ -355,7 +365,11 @@ async def start_server():
     connection = connect_db()
     print("Database connected successfully !")
 
-    server = await asyncio.start_server(handle_client, HOST, PORT)
+    server = await asyncio.start_server(
+        lambda reader, writer : handle_client(reader, writer, connection),
+        HOST,
+        PORT
+        )
 
     print("Server created Successfully !")
 
