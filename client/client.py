@@ -41,12 +41,12 @@ async def receive_messages(reader):
 
 async def start_client():
 
-    name = input("Enter your nickname : ")
+    #name = input("Enter your nickname : ")
 
     reader, writer = await asyncio.open_connection(HOST, PORT)
 
-    writer.write((name + "\n").encode())
-    await writer.drain()
+    #writer.write((name + "\n").encode())
+    #await writer.drain()
 
     await asyncio.gather(send_messages(writer), receive_messages(reader))
 
