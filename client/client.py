@@ -41,12 +41,36 @@ async def receive_messages(reader):
 
 async def start_client():
 
-    #name = input("Enter your nickname : ")
-
     reader, writer = await asyncio.open_connection(HOST, PORT)
 
-    #writer.write((name + "\n").encode())
-    #await writer.drain()
+    while True:
+        message = await reader.readline()
+
+        if not message:
+            break
+
+        print(message.decode().strip())
+
+        if "Press ENTER to Login" in message.decode():
+            choice = await asyncio.to_thread(input, "> ")
+            writer.write((choice + "\n").encode())
+            await writer.drain()
+
+        elif "Type R to Register" in message.decode():
+            continue
+
+        elif "Username : " in message.decode() or "Choose username : " in message.decode():
+            username = await asyncio.to_thread(input, "> ")
+            writer.write((username + "\n").encode())
+            await writer.drain()
+
+        elif "Password : " in message.decode() or "Choose password : " in message.decode():
+            password = await asyncio.to_thread(input, "> ")
+            writer.write((password + "\n").encode())
+            await writer.drain()
+
+        elif "Login successful !" in message.decode() or "Registration Successful !" in message.decode():
+            break
 
     await asyncio.gather(send_messages(writer), receive_messages(reader))
 

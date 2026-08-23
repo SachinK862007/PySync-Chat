@@ -70,7 +70,7 @@ async def authenticate_client(reader, writer, connection):
 
         if choice == "":
             choice = "LOGIN"
-            break
+            
 
         if choice == "R":
 
@@ -105,36 +105,36 @@ async def authenticate_client(reader, writer, connection):
 
 
 
-    if choice == "LOGIN":
+        if choice == "LOGIN":
 
-        await send_reply(writer, "Username : ")
+            await send_reply(writer, "Username : ")
 
-        username_data = await reader.readline()
+            username_data = await reader.readline()
 
-        if not username_data:
-            return None
+            if not username_data:
+                return None
 
-        username = username_data.decode().strip()
+            username = username_data.decode().strip()
 
-        await send_reply(writer, "Password : ")
+            await send_reply(writer, "Password : ")
 
-        password_data = await reader.readline()
+            password_data = await reader.readline()
 
-        if not password_data:
-            return None
+            if not password_data:
+                return None
 
-        password = password_data.decode().strip()
+            password = password_data.decode().strip()
 
-        result = login_user(connection, username, password)
+            result = login_user(connection, username, password)
 
-        if result == "Login successfull":
+            if result == "Login successful":
 
-            await send_reply(writer, "Login successfull!")
-            return username
+                await send_reply(writer, "Login successful!")
+                return username
 
-        await send_reply(writer, result)
+            await send_reply(writer, result)
 
-        return None
+            continue
 
 
 
@@ -448,7 +448,7 @@ async def handle_client(reader, writer, connection):
         
         writer.close()
         await writer.wait_closed()
-        print(f"{nickname} Disconnected !")
+        print(f"{username} Disconnected !")
 
 
 async def start_server():
