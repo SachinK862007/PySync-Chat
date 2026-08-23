@@ -1,3 +1,9 @@
+#from .services.database_service import connect_db
+#from .services.database_service import save_message
+#from .services.database_service import get_messages
+#from .services.auth_service import login_user
+#from .services.auth_service import register_user
+
 import asyncio
 from server.config import HOST, PORT
 
@@ -39,22 +45,160 @@ async def receive_messages(reader):
 
 
 
-async def start_client():
 
-    name = input("Enter your nickname : ")
+
+
+async def authenticate_client(reader, writer):
+
+    #await send_reply(writer, "Welcome to PySync Chat!")
+
+    data = await reader.readline()
+
+    if not data:
+        return False
+
+    print(data.decode().strip())
+
+    while True:
+
+        data = await reader.readline()
+
+        if not data:
+            return False
+
+        print(data.decode().strip())
+
+
+        data = await reader.readline()
+
+        if not data:
+            return False
+
+        print(data.decode().strip())
+
+
+        choice = await asyncio.to_thread(input, "> ")
+
+        writer.write((choice + "\n").encode())
+        await writer.drain()
+
+        if choice == "":
+
+            await send_reply(writer, "Username :")
+
+            username_data = await reader.readline()
+
+            if not username_data:
+                return None
+
+            username = username_data.decode().strip()
+
+
+            await send_reply(writer, "Password :")
+
+            password_data = await reader.readline()
+
+            if not password_data:
+                return None
+
+            password = password_data.decode().strip()
+
+
+            result = login_user(connection, username, password)
+
+
+            if result == "Login successful":
+
+                await send_reply(writer, "Login successful!")
+
+                return username
+
+
+            await send_reply(writer, result)
+
+            continue
+
+
+
+        elif choice == "R":
+
+            await send_reply(writer, "Choose username:")
+
+            username_data = await reader.readline()
+
+            if not username_data:
+                return None
+
+            username = username_data.decode().strip()
+
+
+            await send_reply(writer, "Choose password:")
+
+            password_data = await reader.readline()
+
+            if not password_data:
+                return None
+
+            password = password_data.decode().strip()
+
+
+            result = register_user(connection, username, password)
+
+
+            await send_reply(writer, result)
+
+
+            if result == "Registration Successful !\n":
+
+                return username
+
+
+            continue
+
+
+        
+
+        else:
+
+            await send_reply(writer, "Invalid option. Please press ENTER for Login or type R for Register.")
+
+            continue
+
+
+
+
+
+
+
+
+async def start_client():
 
     reader, writer = await asyncio.open_connection(HOST, PORT)
 
-    writer.write((name + "\n").encode())
-    await writer.drain()
+
+    authenticated = await authenticate_client(reader, writer)
+
+
+    if not authenticated:
+
+        writer.close()
+        await writer.wait_closed()
+
+        return
+
+
+    print("\nConnected successfully. You can start chatting.\n")
+
 
     await asyncio.gather(send_messages(writer), receive_messages(reader))
 
 
+if __name__ == "__main__":
 
-if __name__ == '__main__':
     try:
-        asyncio.run(start_client())
-    except KeyboardInterrupt:
-        print("\nDeveloper stopped the connectionusing Ctrl + C.")
 
+        asyncio.run(start_client())
+
+    except KeyboardInterrupt:
+
+        print("\nDeveloper stopped the connection using Ctrl + C.")

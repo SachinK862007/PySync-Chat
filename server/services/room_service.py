@@ -1,3 +1,13 @@
+async def find_current_room(writer, rooms):
+    for room_name, clients in rooms.items():
+        if writer in clients:
+            return room_name
+
+    return None
+
+
+
+
 def create_room(room_name, rooms):
     
     if room_name in rooms:
@@ -9,14 +19,17 @@ def create_room(room_name, rooms):
 
 
 def leave_room(writer, rooms):
-    current_room = find_user_room(writer, rooms)
+    for room_name, clients in rooms.items():
+        if writer in clients:
 
-    if current_room is None:
-        return None
+            clients.remove(writer)
 
-    rooms[current_room].remove(writer)
+            if room_name != "general":
+                rooms["general"].append(writer)
 
-    return current_room
+            return room_name
+
+    return None
 
 
 

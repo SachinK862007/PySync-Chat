@@ -1,98 +1,25 @@
+from .services.auth_service import login_user
+from .services.auth_service import register_user
+from .services.auth_service import get_user
 from .handlers.command_handler import dispatch_command
+from .services.database_service import connect_db
+from .services.database_service import save_message
+from .services.database_service import get_messages
+from .services.room_service import find_current_room
+
+
 
 import asyncio
-import sqlite3
 from .config import HOST, PORT
 
 connected_clients = []
 nicknames = {}
 private_chats = {}
-active_dms = {}
 requests = []
 rooms = {
     "general": []
 }
 
-commands = {
-    "/join" : "Join a specific room. Usage :  /join <room_name>",
-    "/dm" : "Send a private message. Usage : /dm <nickname> <message>",
-    "/help" : "Display available commands. Usage : /help",
-    "/rooms" : "Display available rooms. Usage : /rooms",
-    "/users" : "Display users in the current room. Usage : /users",
-    "/exit" : "Exit the chat. Usage : /exit"
-}
-
-#storage for chat history "connection"
-def connect_db():
-    connection = sqlite3.connect("pysync_chat.db")
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS messages(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            sender TEXT,
-            message TEXT,
-            conversation TEXT,
-            timestamp TEXT
-        )
-    """)
-
-    connection.commit()
-    return connection
-
-
-
-#function to save the chat in the DB
-def save_message(connection, sender, message, conversation):
-    cursor = connection.cursor()
-
-    cursor.execute("""
-        INSERT INTO messages (sender, message, conversation, timestamp)
-        VALUES (?, ?, ?, datetime('now'))
-    """, (sender, message, conversation))
-
-    connection.commit()
-
-#function to retrieve the chat history from the DB
-def get_messages(connection, conversation):
-    cursor = connection.cursor()
-    cursor.execute("SELECT * FROM messages WHERE conversation = ? ORDER BY id ASC", (conversation,))
-    messages = cursor.fetchall()
-    return messages
-
-
-#11th function to send the qury to the DB for public rooms
-def execution(connection, sender, message, conversation):
-    save_message(connection, nicknames[sender], message, conversation)
-
-    #messages = get_messages(connection, conversation)
-    #print(messages)
-    
-
-#11th function to send the qury to the DB for private messages
-def execution_2(connection, sender, private_message, dm_id):
-    save_message(connection, nicknames[sender], private_message, dm_id)
-
-    #messages = get_messages(connection, dm_id)
-    #print(messages)
-
-
-#1st function 
-async def find_current_room(writer):
-    for room_name, clients in rooms.items():
-        if writer in clients:
-            return room_name
-
-    return None
-
-
-
-#2nd function
-async def move_client(writer,room_name):
-    current_room = await find_current_room(writer)
-
-    rooms[current_room].remove(writer)
-    rooms[room_name].append(writer)
 
 
 
@@ -107,7 +34,7 @@ async def brodcast_to_room(room_name, message, sender = None):
 
 #4th function
 async def remove_client(writer):
-    current_room = await find_current_room(writer)
+    current_room = await find_current_room(writer, rooms)
     if current_room is not None:
         rooms[current_room].remove(writer)
 
@@ -116,92 +43,127 @@ async def remove_client(writer):
         nicknames.pop(writer,None)
 
 
-
-#5th function 
-async def handle_help(writer):
-    help_message = "Available Commands\n"
-    
-    for command, description in commands.items():
-        help_message += f"{command} : {description}\n"
-    
-    writer.write(help_message.encode())
+async def send_reply(writer, reply):
+    writer.write(f"{reply}\n".encode())
     await writer.drain()
 
 
 
-#6th function
-async def handle_rooms(writer):
-    rooms_message = "Available Rooms\n"
+
+
+async def authenticate_client(reader, writer, connection):
+
+    await send_reply(writer, "Welcome to PySync Chat!")
+
+    while True:
+
+        await send_reply(writer, "Press ENTER to Login")
+
+        await send_reply(writer, "Type R to Register")
+
+        choice = await reader.readline()
+
+        if not choice:
+            return None
+
+        choice = choice.decode().strip().upper()
+
+        if choice == "":
+            choice = "LOGIN"
+            
+
+        if choice == "R":
+
+            await send_reply(writer, "Choose username:")
+
+            username_data = await reader.readline()
+
+            if not username_data:
+                return None
+
+            username = username_data.decode().strip()
+
+            await send_reply(writer, "Choose password:")
+
+            password_data = await reader.readline()
+
+            if not password_data:
+                return None
+
+            password = password_data.decode().strip()
+
+            result = register_user(connection, username, password)
+
+            await send_reply(writer, result)
+
+            if result != "Registration Successful !\n":
+                return None
+
+            return username
+
+        await send_reply(writer, "Invalid option. Please press ENTER for Login or type R for Register.")
+
+
+
+        if choice == "LOGIN":
+
+            await send_reply(writer, "Username : ")
+
+            username_data = await reader.readline()
+
+            if not username_data:
+                return None
+
+            username = username_data.decode().strip()
+
+            await send_reply(writer, "Password : ")
+
+            password_data = await reader.readline()
+
+            if not password_data:
+                return None
+
+            password = password_data.decode().strip()
+
+            result = login_user(connection, username, password)
+
+            if result == "Login successful":
+
+                await send_reply(writer, "Login successful!")
+                return username
+
+            await send_reply(writer, result)
+
+            continue
+
+
+
     
-    for room_name in rooms:
-        rooms_message += f"{room_name}\n"
-
-    writer.write(rooms_message.encode())
-    await writer.drain()
 
 
 
-#7th function
-async def handle_users(writer):
-    current_room = await find_current_room(writer)
-    users_message = f"Users in {current_room}\n"
-
-    for client in rooms[current_room]:
-        users_message += f"{nicknames[client]}\n"
-
-    writer.write(users_message.encode())
-    await writer.drain()
-
-
-
-##8th function
-#async def find_user_by_nickname(target_nickname):
-#    for writer, nickname in nicknames.items():
-#        if nickname.upper() == target_nickname.upper():
-#            return writer
-#
-#    return None
-
-
-
-#9th function
-async def find_private_chat(writer, target_writer):
-    for dm_id, members in private_chats.items():
-        if writer in members and target_writer in members:
-         return dm_id
-
-    return None
-
-
-
-
-##10th function
-#async def create_private_chat(writer, target_writer):
-#    existing_dm = await find_private_chat(writer, target_writer)
-#    if existing_dm is not None:
-#        return existing_dm
-#
-#    dm_id = f"dm_{len(private_chats) + 1}"
-#    private_chats[dm_id] = [writer, target_writer]
-#    return dm_id
 
 
 
 #main function that call above functions
-async def handle_client(reader, writer):
+async def handle_client(reader, writer, connection):
 
+    username = await authenticate_client(reader, writer, connection)
 
+    if username is None:
+        return 
+    
     connected_clients.append(writer)
 
     rooms["general"].append(writer)
 
-    nickname_data = await reader.readline()
+    #nickname_data = await reader.readline()
     
-    nickname = nickname_data.decode().strip()
+    #nickname = nickname_data.decode().strip()
     
-    nicknames[writer] = nickname
+    nicknames[writer] = username
     
-    print(f"{nickname} Connected to general room !")
+    print(f"{username} Connected to general room !")
     
     try:
         while True:
@@ -256,7 +218,7 @@ async def handle_client(reader, writer):
                 
                 continue
                 
-            current_room = await find_current_room(writer) #calls 1st function
+            current_room = await find_current_room(writer, rooms) #calls 1st function
 
 
             if message.upper() == "/HELP":
@@ -272,8 +234,7 @@ async def handle_client(reader, writer):
                     requests
                 )
 
-                writer.write(reply.encode())
-                await writer.drain() 
+                await send_reply(writer, reply) 
 
                 continue
 
@@ -290,8 +251,7 @@ async def handle_client(reader, writer):
                     requests
                 )
 
-                writer.write(reply.encode())
-                await writer.drain() 
+                await send_reply(writer, reply) 
 
                 continue
 
@@ -307,8 +267,7 @@ async def handle_client(reader, writer):
                     requests
                 )
 
-                writer.write(reply.encode())
-                await writer.drain() 
+                await send_reply(writer, reply) 
 
                 continue
 
@@ -328,8 +287,7 @@ async def handle_client(reader, writer):
                     requests
                 )
 
-                writer.write(f"{reply}\n".encode())
-                await writer.drain()
+                await send_reply(writer, reply)
 
                 continue
 
@@ -343,8 +301,7 @@ async def handle_client(reader, writer):
             
                 if len(parts) < 2:
                     reply = "Usage: /dm <nickname>\n"
-                    writer.write(reply.encode())
-                    await writer.drain()
+                    await send_reply(writer, reply)
                     continue
             
                 target_nickname = parts[1]
@@ -359,8 +316,7 @@ async def handle_client(reader, writer):
             
                 if target_writer is None:
                     reply = f"User {target_nickname} not found!\n"
-                    writer.write(reply.encode())
-                    await writer.drain()
+                    await send_reply(writer, reply)
                     continue
             
                 reply = dispatch_command(
@@ -373,9 +329,9 @@ async def handle_client(reader, writer):
                     private_chats,
                     requests
                 )
-            
-                writer.write(f"{reply}\n".encode())
-                await writer.drain()
+
+                #save_message(connect_db(), nicknames[writer], private_message, dm_id)
+                await send_reply(writer, reply)
             
                 continue
             
@@ -405,8 +361,7 @@ async def handle_client(reader, writer):
                     requests
                 )
 
-                writer.write(f"{reply}\n".encode())
-                await writer.drain()
+                await send_reply(writer, reply)
 
                 continue
 
@@ -436,8 +391,7 @@ async def handle_client(reader, writer):
                     requests
                 )
 
-                writer.write(f"{reply}\n".encode())
-                await writer.drain()
+                await send_reply(writer, reply)
 
                 continue
 
@@ -461,14 +415,23 @@ async def handle_client(reader, writer):
                 if reply == "exit":
                     break
 
-                writer.write(f"{reply}\n".encode())
-                await writer.drain()
+                await send_reply(writer, reply)
 
                 continue
 
 
 
-            execution(connect_db(), writer, message, current_room) # calls 11th function public messages
+            if current_room is None:
+                reply = "You are not in a room.\n" 
+                writer.write(reply.encode())
+                await writer.drain()
+                continue
+
+
+
+
+            #connect_db()
+            save_message(connection, nicknames[writer], message, current_room)
 
             broadcast_message = f"{nicknames[writer]}: {message}\n"
 
@@ -485,7 +448,7 @@ async def handle_client(reader, writer):
         
         writer.close()
         await writer.wait_closed()
-        print(f"{nickname} Disconnected !")
+        print(f"{username} Disconnected !")
 
 
 async def start_server():
@@ -498,7 +461,11 @@ async def start_server():
     connection = connect_db()
     print("Database connected successfully !")
 
-    server = await asyncio.start_server(handle_client, HOST, PORT)
+    server = await asyncio.start_server(
+        lambda reader, writer : handle_client(reader, writer, connection),
+        HOST,
+        PORT
+        )
 
     print("Server created Successfully !")
 
