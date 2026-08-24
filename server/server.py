@@ -72,7 +72,7 @@ async def authenticate_client(reader, writer, connection):
             choice = "LOGIN"
             
 
-        if choice == "R":
+        elif choice == "R":
 
             await send_reply(writer, "Choose username:")
 
