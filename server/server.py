@@ -51,6 +51,7 @@ async def send_reply(writer, reply):
 
 
 
+
 async def authenticate_client(reader, writer, connection):
 
     await send_reply(writer, "Welcome to PySync Chat!")

@@ -93,7 +93,7 @@ async def authenticate_client(reader, writer):
 
             username = await asyncio.to_thread(input, "> ")
 
-            writer.write((choice + "\n").encode())
+            writer.write((username + "\n").encode())
             await writer.drain()
 
             data = await reader.readline()
@@ -132,7 +132,7 @@ async def authenticate_client(reader, writer):
             
             username = await asyncio.to_thread(input, "> ")
 
-            writer.write((choice + "\n").encode())
+            writer.write((username + "\n").encode())
             await writer.drain()
 
             data = await reader.readline()
@@ -145,7 +145,7 @@ async def authenticate_client(reader, writer):
             
             username = await asyncio.to_thread(input, "> ")
 
-            writer.write((choice + "\n").encode())
+            writer.write((password + "\n").encode())
             await writer.drain()
 
             data = await reader.readline()
@@ -157,7 +157,7 @@ async def authenticate_client(reader, writer):
 
             print(result)
 
-            if result == "Registration Successful!":
+            if result == "Registration Successful !":
                 return True 
 
             continue
