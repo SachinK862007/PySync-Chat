@@ -51,6 +51,7 @@ async def send_reply(writer, reply):
 
 
 
+
 async def authenticate_client(reader, writer, connection):
 
     await send_reply(writer, "Welcome to PySync Chat!")
@@ -68,44 +69,7 @@ async def authenticate_client(reader, writer, connection):
 
         choice = choice.decode().strip().upper()
 
-        if choice == "":
-            choice = "LOGIN"
-            
-
-        if choice == "R":
-
-            await send_reply(writer, "Choose username:")
-
-            username_data = await reader.readline()
-
-            if not username_data:
-                return None
-
-            username = username_data.decode().strip()
-
-            await send_reply(writer, "Choose password:")
-
-            password_data = await reader.readline()
-
-            if not password_data:
-                return None
-
-            password = password_data.decode().strip()
-
-            result = register_user(connection, username, password)
-
-            await send_reply(writer, result)
-
-            if result != "Registration Successful !\n":
-                return None
-
-            return username
-
-        await send_reply(writer, "Invalid option. Please press ENTER for Login or type R for Register.")
-
-
-
-        if choice == "LOGIN":
+        if choice == "":    #Login
 
             await send_reply(writer, "Username : ")
 
@@ -136,12 +100,45 @@ async def authenticate_client(reader, writer, connection):
 
             continue
 
+            
+
+        elif choice == "R":
+
+            await send_reply(writer, "Choose username:")
+
+            username_data = await reader.readline()
+
+            if not username_data:
+                return None
+
+            username = username_data.decode().strip()
+
+            await send_reply(writer, "Choose password:")
+
+            password_data = await reader.readline()
+
+            if not password_data:
+                return None
+
+            password = password_data.decode().strip()
+
+            result = register_user(connection, username, password)
+
+            await send_reply(writer, result)
+
+            if result == "Registration Successful !\n":
+                return username
+
+            continue
+
+
+        else:
+            await send_reply(writer, "Invalid option. Please press ENTER for Login or type R for Register.")
+
+            continue
 
 
     
-
-
-
 
 
 

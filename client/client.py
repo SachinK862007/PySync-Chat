@@ -82,92 +82,85 @@ async def authenticate_client(reader, writer):
         writer.write((choice + "\n").encode())
         await writer.drain()
 
-        if choice == "":
+        if choice.strip() == "":
+            
+            data  = await reader.readline()
 
-            await send_reply(writer, "Username :")
+            if not data:
+                return False
 
-            username_data = await reader.readline()
+            print(data.decode().strip())
 
-            if not username_data:
-                return None
+            username = await asyncio.to_thread(input, "> ")
 
-            username = username_data.decode().strip()
+            writer.write((username + "\n").encode())
+            await writer.drain()
 
+            data = await reader.readline()
 
-            await send_reply(writer, "Password :")
+            if not data:
+                return False
 
-            password_data = await reader.readline()
+            print(data.decode().strip())
 
-            if not password_data:
-                return None
+            password = await asyncio.to_thread(input, "> ")
 
-            password = password_data.decode().strip()
+            writer.write((password + "\n").encode())
+            await writer.drain()
 
+            data = await reader.readline()
 
-            result = login_user(connection, username, password)
+            if not data:
+                return False
 
+            result = data.decode().strip()
+            print(result)
 
-            if result == "Login successful":
-
-                await send_reply(writer, "Login successful!")
-
-                return username
-
-
-            await send_reply(writer, result)
-
-            continue
-
-
-
-        elif choice == "R":
-
-            await send_reply(writer, "Choose username:")
-
-            username_data = await reader.readline()
-
-            if not username_data:
-                return None
-
-            username = username_data.decode().strip()
-
-
-            await send_reply(writer, "Choose password:")
-
-            password_data = await reader.readline()
-
-            if not password_data:
-                return None
-
-            password = password_data.decode().strip()
-
-
-            result = register_user(connection, username, password)
-
-
-            await send_reply(writer, result)
-
-
-            if result == "Registration Successful !\n":
-
-                return username
-
+            if result == "Login successful!":
+                return True
 
             continue
 
+        elif choice.upper() == "R":
+            data = await reader.readline()
 
-        
+            if not data:
+                return False
 
-        else:
+            print(data.decode().strip())  
 
-            await send_reply(writer, "Invalid option. Please press ENTER for Login or type R for Register.")
+            
+            username = await asyncio.to_thread(input, "> ")
+
+            writer.write((username + "\n").encode())
+            await writer.drain()
+
+            data = await reader.readline()
+
+            if not data:
+                return False
+
+            print(data.decode().strip())
+
+            
+            password = await asyncio.to_thread(input, "> ")
+
+            writer.write((password + "\n").encode())
+            await writer.drain()
+
+            data = await reader.readline()
+
+            if not data:
+                return False
+
+            result = data.decode().strip()
+
+            print(result)
+
+            if result == "Registration Successful !":
+                return True 
 
             continue
-
-
-
-
-
 
 
 
