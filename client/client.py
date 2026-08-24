@@ -143,7 +143,7 @@ async def authenticate_client(reader, writer):
             print(data.decode().strip())
 
             
-            username = await asyncio.to_thread(input, "> ")
+            password = await asyncio.to_thread(input, "> ")
 
             writer.write((password + "\n").encode())
             await writer.drain()
