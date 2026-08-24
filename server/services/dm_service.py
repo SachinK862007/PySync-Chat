@@ -29,6 +29,27 @@ def find_private_chat(user_1, user_2, private_chats):
 
 
 
+async def send_dm_message(conversation_id, sender, message):
+
+    users = get_private_chat_users(conversation_id, private_chats)
+
+    if usere is None:
+        return
+
+    for username == sender:
+
+        if username == sender:
+            continue
+
+        for writer, nickname in nicknames.items():
+
+            if nickname == username:
+
+                writer.write(f"[DM] {sender}: {message}\n".encode())
+                await writer.drain() 
+
+
+
 
 if __name__ == "__main__":
     private_chats = {
