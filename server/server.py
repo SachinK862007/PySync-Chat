@@ -366,6 +366,18 @@ async def handle_client(reader, writer, connection):
                     requests
                 )
 
+                conversation_id = find_private_chat(nicknames[writer], sender_nickname, private_chats)
+
+                if conversation_id:
+                    active_dms[writer] = conversation_id
+
+                    for client, nickname in nicknames.items():
+
+                        if nickname == sender_nickname:
+                            active_dms[client] = conversation_id
+                            break
+
+
                 await send_reply(writer, reply)
 
                 continue
@@ -437,7 +449,7 @@ async def handle_client(reader, writer, connection):
 
                 conversation_id = active_dms[writer]
 
-                await send_dm_message(conversation_id, nicknames[writer], message)
+                await send_dm_message(conversation_id, nicknames[writer], message, private_chats, nicknames)
 
                 continue
 

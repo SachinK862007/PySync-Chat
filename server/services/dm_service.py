@@ -140,9 +140,9 @@ def find_private_chat(user_1, user_2, private_chats):
 
 async def send_dm_message(conversation_id, sender, message, private_chats, nicknames):
 
-    users = get_private_chat_users(conversation_id, private_chats)
+    users = private_chats.get(conversation_id)
 
-    if usere is None:
+    if users is None:
         return
 
     for username in users:
