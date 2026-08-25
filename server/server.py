@@ -331,7 +331,7 @@ async def handle_client(reader, writer, connection):
                     requests
                 )
 
-                conversation_id = find_private_chat(nicknames[writer], sender_nickname, private_chats)
+                conversation_id = find_private_chat(nicknames[writer], target_nickname, private_chats)
 
                 if conversation_id:
                     active_dms[writer] = conversation_id
