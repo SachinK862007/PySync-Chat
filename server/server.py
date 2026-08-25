@@ -288,6 +288,9 @@ async def handle_client(reader, writer, connection):
                     requests
                 )
 
+                if writer in active_dms:
+                    active_dms.pop(writer)
+
                 await send_reply(writer, reply)
 
                 continue
