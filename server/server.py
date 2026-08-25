@@ -7,9 +7,9 @@ from .services.database_service import save_message
 from .services.database_service import get_messages
 from .services.room_service import find_current_room
 from .services.dm_service import get_private_chat_users
-from server.services.dm_service import create_dm_request
-from server.services.dm_service import accept_dm_request
-from server.services.dm_service import reject_dm_request
+from .services.dm_service import find_private_chat
+from .services.dm_service import send_dm_message
+
 
 
 import asyncio
@@ -350,8 +350,7 @@ async def handle_client(reader, writer, connection):
 
                 if len(parts) < 2:
                     reply = "Usage: /accept <nick_name>"
-                    writer.write(reply.encode())
-                    await writer.drain()
+                    await send_reply(writer, reply)
                     continue
 
                 sender_nickname = parts[1]
@@ -380,8 +379,7 @@ async def handle_client(reader, writer, connection):
 
                 if len(parts) < 2:
                     reply = "Usage: /reject <nick_name>"
-                    writer.write(reply.encode())
-                    await writer.drain()
+                    await send_reply(writer, reply)
                     continue
 
                 sender_nickname = parts[1]
