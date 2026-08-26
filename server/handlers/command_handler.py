@@ -109,7 +109,7 @@ def handle_dm(user_1, user_2, private_chats,requests):
     conversation_id = find_private_chat(user_1, user_2, private_chats)
 
     if conversation_id:
-        return f"Switched to DM with {conversation_id}"
+        return f"Switched to DM with {user_2}"
 
     created = create_request(user_1, user_2, requests)
 
@@ -122,7 +122,7 @@ def handle_dm(user_1, user_2, private_chats,requests):
 
 def handle_requests(current_user, requests):
 
-    user_requests = get_requests_for_user(current_user, requests)
+    user_requests = get_requests_for_users(current_user, requests)
 
     incoming = []
     sent = []
@@ -133,7 +133,7 @@ def handle_requests(current_user, requests):
             incoming.append(request)
 
         elif request["sender"] == current_user:
-            send.append(request)
+            sent.append(request)
 
     result = ""
 
@@ -301,7 +301,7 @@ def dispatch_command(command, argument, writer, current_user, users, rooms, priv
     if command == "/dm":
         return handle_dm(current_user, argument, private_chats, requests)
 
-    if command == "requests":
+    if command == "/requests":
         return handle_requests(current_user, requests)
 
     if command == "/accept":
@@ -314,7 +314,7 @@ def dispatch_command(command, argument, writer, current_user, users, rooms, priv
         return handle_dmleave(writer, current_user, private_chats, active_dms)
 
     if command == "/where":
-        return handle_where(writer, current_user, rooms, active_dms)
+        return handle_where(writer, current_user, rooms,private_chats, active_dms)
 
     if command == "/exit":
         return handle_exit()
