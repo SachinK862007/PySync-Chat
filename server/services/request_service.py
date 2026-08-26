@@ -55,6 +55,20 @@ def create_request(sender, receiver, requests):
 
 
 
+def get_requests_for_users(username, requests):
+
+    user_requests = []
+
+    for request in requests:
+
+        if (request["sender"] == username or request["receiver"] == username):
+
+            user_requests.append(request)
+
+    return user_requests
+
+
+
 if __name__ == "__main__":
     requests = []
 
