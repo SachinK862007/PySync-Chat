@@ -288,7 +288,7 @@ def validate_command(command):
 
 
 
-def dispatch_command(command, argument, writer, current_user, users, rooms, private_chats, requests):
+def dispatch_command(command, argument, writer, current_user, users, rooms, private_chats, requests, active_dms = None):
 
     if command == "/help":
         return handle_help()
