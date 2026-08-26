@@ -1,11 +1,14 @@
 #from server.services.room_service import get_rooms
+
 from server.services.room_service import join_room
 from server.services.room_service import leave_room
+
 from server.services.dm_service import find_private_chat
 from server.services.dm_service import create_private_chat
+
 from server.services.request_service import create_request
 from server.services.request_service import respond_to_request
-from server.services.request_service import get_requests_for_user
+from server.services.request_service import get_requests_for_users
 
 
 
@@ -138,12 +141,7 @@ def handle_requests(current_user, requests):
         result += ("Incoming DM requests:\n")
 
         for request in incoming:
-            result += (
-                f"--from--"
-                f"{request['sender']}"
-                f":"
-                f"{request['status']}\n"
-            )
+            result += (f"-from {request['sender']} : {request['status']}-\n")
 
     else:
         result += ("Incoming DM requests:\n""None\n")
@@ -155,12 +153,7 @@ def handle_requests(current_user, requests):
 
         for request in sent:
 
-            result += (
-                f"--to--"
-                f"{request['receiver']}"
-                f":"
-                f"{request['status']}\n"
-            )
+            result += (f"-to {request['receiver']} : {request['status']}\n")
 
     else:
         result += ("Sent DM requests:\n""None\n")
@@ -229,7 +222,7 @@ def handle_dmleave(writer, current_user, private_chats, active_dms):
             other_user = username
             break
 
-    if other other_user is None:
+    if other_user is None:
         return ("You left the DM !")
 
     return f"You left DM with {other_user}"

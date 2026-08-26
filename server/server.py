@@ -1,14 +1,19 @@
 from .services.auth_service import login_user
 from .services.auth_service import register_user
 from .services.auth_service import get_user
+
 from .handlers.command_handler import dispatch_command
+
 from .services.database_service import connect_db
 from .services.database_service import save_message
 from .services.database_service import get_messages
+
 from .services.room_service import find_current_room
+
 from .services.dm_service import get_private_chat_users
 from .services.dm_service import find_private_chat
 from .services.dm_service import send_dm_message
+
 from .services.request_service import find_pending_request
 
 
@@ -192,7 +197,8 @@ async def handle_client(reader, writer, connection):
                     nicknames,
                     rooms,
                     private_chats,
-                    requests
+                    requests,
+                    active_dms
                 )
 
                 writer.write(f"{reply}\n".encode())
@@ -238,7 +244,8 @@ async def handle_client(reader, writer, connection):
                     nicknames,
                     rooms,
                     private_chats,
-                    requests
+                    requests,
+                    active_dms
                 )
 
                 await send_reply(writer, reply) 
@@ -255,7 +262,8 @@ async def handle_client(reader, writer, connection):
                     nicknames,
                     rooms,
                     private_chats,
-                    requests
+                    requests,
+                    active_dms
                 )
 
                 await send_reply(writer, reply) 
@@ -271,7 +279,8 @@ async def handle_client(reader, writer, connection):
                     nicknames,
                     rooms,
                     private_chats,
-                    requests
+                    requests,
+                    active_dms
                 )
 
                 await send_reply(writer, reply) 
@@ -291,7 +300,8 @@ async def handle_client(reader, writer, connection):
                     nicknames,
                     rooms,
                     private_chats,
-                    requests
+                    requests,
+                    active_dms
                 
                 )
 
@@ -538,7 +548,8 @@ async def handle_client(reader, writer, connection):
                     nicknames,
                     rooms,
                     private_chats,
-                    requests
+                    requests,
+                    active_dms
                 )
 
                 if reply == "exit":
