@@ -9,6 +9,7 @@ from .services.room_service import find_current_room
 from .services.dm_service import get_private_chat_users
 from .services.dm_service import find_private_chat
 from .services.dm_service import send_dm_message
+from .services.request_service import find_pending_request
 
 
 
@@ -40,7 +41,12 @@ async def brodcast_to_room(room_name, message, sender = None):
 async def remove_client(writer):
     current_room = await find_current_room(writer, rooms)
     if current_room is not None:
-        rooms[current_room].remove(writer)
+
+        if writer in rooms[current_room]:
+            rooms[current_room].remove(writer)
+
+    if writer in active_dms:
+        active_dms.pop(writer, None)
 
     if writer in connected_clients:
         connected_clients.remove(writer)
@@ -286,6 +292,7 @@ async def handle_client(reader, writer, connection):
                     rooms,
                     private_chats,
                     requests
+                
                 )
 
                 if writer in active_dms:
@@ -301,7 +308,7 @@ async def handle_client(reader, writer, connection):
 
             if message.upper() == "/DM" or message.upper().startswith("/DM "):
 
-                parts = message.split(maxsplit=2)
+                parts = message.split(maxsplit = 2)
             
                 if len(parts) < 2:
                     reply = "Usage: /dm <nickname>\n"
@@ -310,6 +317,10 @@ async def handle_client(reader, writer, connection):
             
                 target_nickname = parts[1]
             
+                if target_nickname.lower() == nicknames[writer].lower():
+                    await send_reply(writer, "You cannot DM yourself")
+                    continue
+
                 target_writer = None
             
                 for client, nickname in nicknames.items():
@@ -331,7 +342,8 @@ async def handle_client(reader, writer, connection):
                     nicknames,
                     rooms,
                     private_chats,
-                    requests
+                    requests,
+                    active_dms
                 )
 
                 conversation_id = find_private_chat(nicknames[writer], target_nickname, private_chats)
@@ -341,7 +353,36 @@ async def handle_client(reader, writer, connection):
 
                 #save_message(connect_db(), nicknames[writer], private_message, dm_id)
                 await send_reply(writer, reply)
+
+                if conversation_id is None:
+
+                    await send_reply(
+                        target_writer,
+                        f"{nicknames[writer]} "
+                        f"sent to a DM request. "
+                        f"Use /requests to view it. "
+                    )
             
+                continue
+
+
+            
+            if message.upper() == "/REQUESTS":
+
+                reply = dispatch_command(
+                    "/requests",
+                    None,
+                    writer,
+                    nicknames[writer],
+                    nicknames,
+                    rooms,
+                    private_chats,
+                    requests,
+                    active_dms
+                )
+
+                await send_reply(writer, reply)
+
                 continue
             
 
@@ -358,6 +399,8 @@ async def handle_client(reader, writer, connection):
 
                 sender_nickname = parts[1]
 
+                pending_request = find_pending_request(sender_nickname, nicknames[writer], requests)
+
                 reply = dispatch_command(
                     "/accept",
                     sender_nickname,
@@ -366,19 +409,31 @@ async def handle_client(reader, writer, connection):
                     nicknames,
                     rooms,
                     private_chats,
-                    requests
+                    requests,
+                    active_dms
                 )
 
-                conversation_id = find_private_chat(nicknames[writer], sender_nickname, private_chats)
+                if pending_request is not None and pending_request["status"] == "accepted":
+                    conversation_id = find_private_chat(nicknames[writer], sender_nickname, private_chats)
 
-                if conversation_id:
-                    active_dms[writer] = conversation_id
+                    if conversation_id:
+                        active_dms[writer] = conversation_id
 
-                    for client, nickname in nicknames.items():
+                        for client, nickname in nicknames.items():
 
-                        if nickname == sender_nickname:
-                            active_dms[client] = conversation_id
-                            break
+                            if nickname == sender_nickname:
+                                #active_dms[client] = conversation_id
+
+                                await send_reply(
+                                    client,
+                                    f"{nicknames[writer]} "
+                                    f"accepted your DM request. "
+                                    f"Use /dm "
+                                    f"{nicknames[writer]} "
+                                    f"to enter the conversation. "
+                                )
+
+                                break
 
 
                 await send_reply(writer, reply)
@@ -399,6 +454,9 @@ async def handle_client(reader, writer, connection):
 
                 sender_nickname = parts[1]
 
+                pending_request = find_pending_request(sender_nickname, nicknames[writer], requests)
+
+
                 reply = dispatch_command(
                     "/reject",
                     sender_nickname,
@@ -407,7 +465,59 @@ async def handle_client(reader, writer, connection):
                     nicknames,
                     rooms,
                     private_chats,
-                    requests
+                    requests,
+                    active_dms
+                )
+
+                if peding_request is not None and pending_request["status"] == "rejected":
+                    for client, nickname in nicknames.items():
+
+                        if nickname == sender_nickname:
+                            await send_reply(client, f"{nicknames[writer]} rejected your DM request.")
+                            break
+
+                await send_reply(writer, reply)
+
+                continue
+
+
+
+
+            if message.upper() == "/DMLEAVE":
+
+                reply = dispatch_command(
+                    "/dmleave",
+                    None,
+                    writer,
+                    nicknames[writer],
+                    nicknames,
+                    rooms,
+                    private_chats,
+                    requests,
+                    active_dms
+                )
+
+                if writer in active_dms:
+                    active_dms.pop(writer, None)
+
+                await send_reply(writer, reply)
+
+                continue
+
+
+            
+            if message.upper() == "/WHERE":
+
+                reply = dispatch_command(
+                    "/where",
+                    None,
+                    writer,
+                    nicknames[writer],
+                    nicknames,
+                    rooms.
+                    private_chats,
+                    requests,
+                    active_dms
                 )
 
                 await send_reply(writer, reply)

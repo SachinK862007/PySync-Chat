@@ -308,11 +308,20 @@ def dispatch_command(command, argument, writer, current_user, users, rooms, priv
     if command == "/dm":
         return handle_dm(current_user, argument, private_chats, requests)
 
+    if command == "requests":
+        return handle_requests(current_user, requests)
+
     if command == "/accept":
         return handle_accept(current_user, argument, requests, private_chats)
 
     if command == "/reject":
         return handle_reject(current_user, argument, requests)
+
+    if command =="/dmleave":
+        return handle_dmleave(writer, current_user, private_chats, active_dms)
+
+    if command == "/where":
+        return handle_where(writer, current_user, rooms, active_dms)
 
     if command == "/exit":
         return handle_exit()
