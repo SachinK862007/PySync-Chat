@@ -2,6 +2,9 @@ from .services.auth_service import login_user
 from .services.auth_service import register_user
 from .services.auth_service import get_user
 
+from server.services.room_service import join_room
+from server.services.room_service import leave_room
+
 from .handlers.command_handler import dispatch_command
 
 from .services.database_service import connect_db
@@ -292,21 +295,32 @@ async def handle_client(reader, writer, connection):
 
             if message.upper() == "/LEAVE":
 
-                reply = dispatch_command(
-                    "/leave",
-                    None,
-                    writer,
-                    nicknames[writer],
-                    nicknames,
-                    rooms,
-                    private_chats,
-                    requests,
-                    active_dms
-                
-                )
-
                 if writer in active_dms:
-                    active_dms.pop(writer)
+
+                    active_dms.pop(writer, None)
+
+                    join_room(writer, "general", rooms)
+
+                    reply = "You left the DM and returned to #general"
+                    await send_reply(writer, reply)
+
+                    continue
+
+                current_room = None
+
+                for room_name, clients in rooms.items():
+                    if writer in clients:
+
+                        current_room = room_name
+                        break
+
+                if current_room is not None:
+
+                    leave_room(writer, rooms)
+
+                join_room(writer, "general", rooms)
+
+                reply = "You returned to #general"    
 
                 await send_reply(writer, reply)
 
@@ -479,7 +493,7 @@ async def handle_client(reader, writer, connection):
                     active_dms
                 )
 
-                if peding_request is not None and pending_request["status"] == "rejected":
+                if pending_request is not None and pending_request["status"] == "rejected":
                     for client, nickname in nicknames.items():
 
                         if nickname == sender_nickname:
@@ -524,7 +538,7 @@ async def handle_client(reader, writer, connection):
                     writer,
                     nicknames[writer],
                     nicknames,
-                    rooms.
+                    rooms,
                     private_chats,
                     requests,
                     active_dms
