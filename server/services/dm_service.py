@@ -138,6 +138,14 @@ def find_private_chat(user_1, user_2, private_chats):
 
 
 
+def get_dm_history_key(user_1, user_2):
+
+    users = sorted([user_1, user_2], key = str.lower)
+
+    return f"dm|{users[0]}|{users[1]}"
+
+
+
 async def send_dm_message(conversation_id, sender, message, private_chats, nicknames):
 
     users = private_chats.get(conversation_id)
