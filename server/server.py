@@ -573,7 +573,92 @@ async def handle_client(reader, writer, connection):
 
             if message.upper() == "/TUI_DMS":
 
-                
+                contacts = get_dm_contacts(connection, nicknames[writer])
+
+                for conversation_id, users in private_chats.items():
+                    if nicknames[writer] in users:
+
+                        for username in users:
+                            if users != nicknames[writer]:
+
+                                if username not in contacts:
+                                    contacts.append(username)
+
+                await send_reply(writer, "__TUI_DMS_BEGIN__")
+
+                for username in contacts:
+                    await send_reply(writer, f"DM: {username}")
+
+                await send_reply(writer, "__TUI_DMS_END__")
+                continue
+
+
+            if message.upper().startswith("/TUI_ROOM "):
+
+                room_name = message.split(maxsplit = 1)[1].strip()
+
+                if room_name not in rooms:
+                    await send_reply(writer, f"__TUI_ERROR__:Room {room_name} not found")
+                    continue
+
+                reply = dispatch_command(
+                    "/join",
+                    room_name,
+                    writer,
+                    nicknames[writer],
+                    nicknames,
+                    rooms,
+                    private_chats,
+                    requests,
+                    active_dms
+                )
+
+                active_dms.pop(writer, None)
+
+                await send_reply(writer, f"__TUI_CONTEXT__:ROOM:{room_name}")
+
+                history = get_messages(connection, room_name)
+
+                for row in history:
+                    message_id, sender, chat_message, conversation, timestamp = row
+
+                    await send_reply(writer, f"__TUI_HISTORY__:{sender}: {chat_message}")
+
+                await send_reply(writer, "__TUI_HISTORY_END__")
+                continue
+
+            
+
+
+            if message.upper().startswith("/TUI_DM "):
+
+                target_nickname = message.split(maxsplit = 1)[1].strip()
+
+                conversation_id = find_private_chat(nicknames[writer], target_nickname, private_chats)
+
+                if conversation_id is None:
+
+                    await send_reply(writer, f"__TUI_ERROR__:No DM conversation with {target_nickname}")
+                    continue
+
+                active_dms[writer] = conversation_id
+
+                await send_reply(writer, f"__TUI_CONTEXT__:DM:{target_nickname}")
+
+                conversation_key = get_dm_history_key(nicknames[writer], target_nickname)
+
+                history = get_messages(connection, conversation_key)
+
+                for row in history:
+
+                    message_id, sender, chat_message, conversation, timestamp = row
+
+                    await send_reply(writer, f"__TUI_HISTORY__:{sender}: {chat_message}")
+
+                await send_reply(writer, "__TUI_HISTORY_END__")
+
+                continue
+
 
 
 
