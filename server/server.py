@@ -10,9 +10,11 @@ from .handlers.command_handler import dispatch_command
 from .services.database_service import connect_db
 from .services.database_service import save_message
 from .services.database_service import get_messages
+from .services.database_service import get_dm_contacts
 
 from .services.room_service import find_current_room
 
+from .services.dm_service import get_dm_history_key
 from .services.dm_service import get_private_chat_users
 from .services.dm_service import find_private_chat
 from .services.dm_service import send_dm_message
@@ -39,9 +41,14 @@ rooms = {
 #3rd function
 async def brodcast_to_room(room_name, message, sender = None):
     for client in rooms[room_name]:
-        if sender is None or client != sender:
-            client.write(message.encode())
-            await client.drain()
+        if sender is not None and client == sender:
+            continue
+
+        if client in active_dms:
+            continue
+
+        client.write(message.encode())
+        await client.drain()
 
 
 
@@ -550,6 +557,25 @@ async def handle_client(reader, writer, connection):
 
 
 
+            if message.upper() == "/TUI_ROOMS":
+
+                await send_reply(writer, "__TUI_ROOMS_BEGIN__")
+
+                for room_name in rooms:
+
+                    await send_reply(writer, f"ROOM: {room_name}")
+
+                await send_reply(writer, "__TUI_ROOMS_END__")
+
+                continue
+
+            
+
+            if message.upper() == "/TUI_DMS":
+
+                
+
+
 
 
             if message.upper() == '/EXIT':
@@ -586,6 +612,21 @@ async def handle_client(reader, writer, connection):
             if writer in active_dms:
 
                 conversation_id = active_dms[writer]
+
+                users = private_chats.get(conversation_id)
+                other_user = None
+
+                if users is not None:
+                    for username in users:
+
+                        if username != nicknames[writer]:
+                            other_user = username
+                            break
+
+                if other_user is not None:
+                    conversation_key = get_dm_history_key(nicknames[writer], other_user)
+
+                    save_message(connection, nicknames[writer], message, conversation_key)
 
                 await send_dm_message(conversation_id, nicknames[writer], message, private_chats, nicknames)
 
