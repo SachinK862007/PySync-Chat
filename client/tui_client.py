@@ -1,7 +1,7 @@
 import asyncio
 
 from textual.app import App, ComposeResult
-from textual.containers import Horizontal, Vertical, VerticalScroll, Container
+from textual.containers import Horizontal, Vertical, Container
 from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
@@ -44,7 +44,7 @@ class ServerConnection:
                     await self.incoming.put("__CONNECTION_CLOSED__")
                     break
 
-                message = (data.decode(errors = "replace").rstrip("\n"))
+                message = data.decode(errors="replace").rstrip("\r\n")
 
                 await self.incoming.put(message)
 
@@ -66,13 +66,17 @@ class ServerConnection:
         await self.writer.drain()
 
 
-    async def receiver(self):
+    async def receive(self):
         return await self.incoming.get()
 
     def close(self):
 
         if self.writer is not None:
             self.writer.close()
+
+    async def wait_closed(self):
+        if self.writer is not None:
+            await self.writer.wait_closed()
 
 
 
@@ -171,12 +175,17 @@ class PySyncTUI(App):
         layout: vertical;
     }
 
+    #auth_area {
+        width: 1fr;
+        height: 1fr;
+        align: center middle;
+    }
+
     #auth_panel {
         width: 60%;
         min-width: 50;
         max-width: 90;
         height: auto;
-        margin: 2 2;
         padding: 2;
         border: solid $primary;
     }
@@ -203,14 +212,15 @@ class PySyncTUI(App):
         min-width: 24;
         max-width: 40;
         height: 1fr;
+        padding: 1;
         border-right: solid $panel;
     }
 
     #sidebar_scroll {
         width: 1fr;
         height: 1fr;
-        overflow-y: auto;
-        padding: 1;
+        overflow-y: hidden;
+        align: left top;
     }
 
     .section_title {
@@ -220,19 +230,27 @@ class PySyncTUI(App):
     }
 
     #rooms_list {
-        height: auto;
+        height: 1fr;
+        min-height: 4;
         max-height: 12;
     }
 
     #dm_list {
-        height: auto;
+        height: 1fr;
+        min-height: 4;
         max-height: 16;
     }
 
     #notifications {
         width: 100%;
-        height: 3;
+        height: auto;
         dock: bottom;
+    }
+
+    #notification_summary {
+        width: 100%;
+        height: 2;
+        padding: 0 1;
     }
 
     #chat_area {
@@ -244,6 +262,8 @@ class PySyncTUI(App):
         width: 100%;
         height: 3;
         padding: 1;
+        content-align: left middle;
+        background: $surface;
         border-bottom: solid $panel;
     }
 
@@ -318,31 +338,35 @@ class PySyncTUI(App):
 
         self.server_task = None
 
+        self.context_switch_lock = asyncio.Lock()
+        self.context_history_ready = asyncio.Event()
+
 
     def compose(self) -> ComposeResult:
 
         yield Header()
 
-        with Container(id = "auth_panel"):
+        with Container(id="auth_area"):
+            with Container(id="auth_panel"):
 
-            yield Static("PySync Chat", id="auth_title")
+                yield Static("PySync Chat", id="auth_title")
 
-            yield Input(placeholder="Username", id="auth_username")
+                yield Input(placeholder="Username", id="auth_username")
 
-            yield Input(placeholder="Password", password=True, id="auth_password")
+                yield Input(placeholder="Password", password=True, id="auth_password")
 
-            with Horizontal():
-                yield Button("Login", id="login_button")
+                with Horizontal():
+                    yield Button("Login", id="login_button")
 
-                yield Button("Register", id="register_button")
+                    yield Button("Register", id="register_button")
 
-            yield Static("Connecting...", id="auth_status")
+                yield Static("Connecting...", id="auth_status")
 
         with Horizontal(id = "main_panel", classes = "hidden"):
 
             with Vertical(id = "sidebar"):
 
-                with VerticalScroll(id = "sidebar_scroll"):
+                with Vertical(id = "sidebar_scroll"):
                     yield Static("ROOMS", classes="section_title")
 
                     yield OptionList(id="rooms_list")
@@ -351,12 +375,13 @@ class PySyncTUI(App):
 
                     yield OptionList(id="dm_list")
 
+                yield Static("Notifications: 0", id="notification_summary")
                 yield Button("Notifications", id="notifications")
 
 
             with Vertical(id="chat_area"):
 
-                yield Static("Not connected", id="context_label")
+                yield Static("Current conversation: Not connected", id="context_label")
 
                 yield RichLog(id="message_log",wrap=True, markup=False, auto_scroll=True)
 
@@ -387,9 +412,15 @@ class PySyncTUI(App):
 
     async def consume_initial_auth_messages(self):
 
-        await self.connection.receive()
-        await self.connection.receive()
-        await self.connection.receive()
+        welcome = await self.connection.receive()
+        if welcome.startswith("__CONNECTION_"):
+            raise ConnectionError(welcome)
+
+        first_prompt = await self.connection.receive()
+        second_prompt = await self.connection.receive()
+
+        if "Login" not in first_prompt or "Register" not in second_prompt:
+            raise ConnectionError("Unexpected authentication menu from server")
 
 
     def set_status(self, message):
@@ -438,21 +469,23 @@ class PySyncTUI(App):
 
                 await self.connection.send("R")
 
-
-            await self.connection.receive()
-            await self.connection.receive()
-
+            response = await self.connection.receive()
+            if response.startswith("__CONNECTION_") or "username" not in response.lower():
+                self.set_status(response)
+                return
 
             await self.connection.send(username)
 
-
-            await self.connection.receive()
-
+            response = await self.connection.receive()
+            if response.startswith("__CONNECTION_") or "password" not in response.lower():
+                self.set_status(response)
+                return
 
             await self.connection.send(password)
 
-
             result = await self.connection.receive()
+            result = result.strip()
+            self.set_status(result)
 
 
             if (
@@ -463,11 +496,17 @@ class PySyncTUI(App):
 
                 self.username = username
 
-                self.query_one("#auth_panel").add_class("hidden")
+                self.query_one("#auth_area").add_class("hidden")
 
                 self.query_one("#main_panel").remove_class("hidden")
 
-                self.query_one("#context_label", Static).update("#general")
+                self.query_one("#context_label", Static).update(
+                    "Current conversation: #general"
+                )
+
+                self.current_context = "room"
+
+                self.current_context_name = "general"
 
                 self.set_status("Connected successfully.")
 
@@ -479,15 +518,11 @@ class PySyncTUI(App):
 
                 await self.refresh_dms()
 
+                await self.select_room("general")
+
                 return
 
-
-            self.set_status(result)
-
-
-            # Server returns to the menu
-            await self.connection.receive()
-            await self.connection.receive()
+            await self.consume_auth_menu()
 
 
         except Exception as error:
@@ -497,6 +532,13 @@ class PySyncTUI(App):
         finally:
 
             self.auth_in_progress = False
+
+    async def consume_auth_menu(self):
+        first_prompt = await self.connection.receive()
+        second_prompt = await self.connection.receive()
+
+        if "Login" not in first_prompt or "Register" not in second_prompt:
+            raise ConnectionError("Unexpected authentication menu from server")
 
 
     async def on_button_pressed(self, event: Button.Pressed):
@@ -532,8 +574,21 @@ class PySyncTUI(App):
             return
 
 
-        # Commands are sent directly
         if message.startswith("/"):
+            command, _, argument = message.partition(" ")
+
+            if command.lower() == "/join" and argument.strip():
+                room_name = argument.strip()
+                await self.select_room(room_name)
+                await self.refresh_rooms()
+                return
+
+            if command.lower() == "/dm" and argument.strip():
+                target_username = argument.strip()
+                for username in self.dms:
+                    if username.lower() == target_username.lower():
+                        await self.select_dm(username)
+                        return
 
             await self.send_command(message)
 
@@ -542,7 +597,6 @@ class PySyncTUI(App):
 
         # Normal message
         await self.send_command(message)
-
         self.add_message(f"{self.username}: {message}")
 
 
@@ -562,24 +616,30 @@ class PySyncTUI(App):
 
     async def select_room(self, room_name):
 
-        self.current_context = "room"
-
-        self.current_context_name = room_name
-
-        self.clear_messages()
-
-        await self.send_command(f"/tui_room {room_name}")
+        async with self.context_switch_lock:
+            self.context_history_ready.clear()
+            self.current_context = "room"
+            self.current_context_name = room_name
+            self.clear_messages()
+            await self.send_command(f"/tui_room {room_name}")
+            try:
+                await asyncio.wait_for(self.context_history_ready.wait(), timeout=10)
+            except asyncio.TimeoutError:
+                self.add_message("Timed out loading room history.")
 
 
     async def select_dm(self, username):
 
-        self.current_context = "dm"
-
-        self.current_context_name = username
-
-        self.clear_messages()
-
-        await self.send_command(f"/tui_dm {username}")
+        async with self.context_switch_lock:
+            self.context_history_ready.clear()
+            self.current_context = "dm"
+            self.current_context_name = username
+            self.clear_messages()
+            await self.send_command(f"/tui_dm {username}")
+            try:
+                await asyncio.wait_for(self.context_history_ready.wait(), timeout=10)
+            except asyncio.TimeoutError:
+                self.add_message("Timed out loading DM history.")
 
 
     def clear_messages(self):
@@ -616,6 +676,20 @@ class PySyncTUI(App):
 
 
     async def handle_server_message(self, message):
+
+        if message.startswith("__TUI_ROOM_ADDED__:"):
+            room_name = message[len("__TUI_ROOM_ADDED__:"):].strip()
+            if room_name and room_name not in self.rooms:
+                self.rooms.append(room_name)
+                self.update_room_list()
+            return
+
+        if message.startswith("__TUI_DM_ADDED__:"):
+            username = message[len("__TUI_DM_ADDED__:"):].strip()
+            if username and username not in self.dms:
+                self.dms.append(username)
+                self.update_dm_list()
+            return
 
         if message == "__TUI_ROOMS_BEGIN__":
 
@@ -658,7 +732,7 @@ class PySyncTUI(App):
 
         if message.startswith("DM:"):
 
-            username = message[len("DM:")::]
+            username = message[len("DM:")::].strip()
 
             if username not in self.dms:
 
@@ -674,7 +748,9 @@ class PySyncTUI(App):
             self.current_context = "room"
             self.current_context_name = room_name
 
-            self.query_one("#context_label", Static).update(f"#{room_name}")
+            self.query_one("#context_label", Static).update(
+                f"Current conversation: #{room_name}"
+            )
 
             return
 
@@ -686,7 +762,9 @@ class PySyncTUI(App):
             self.current_context = "dm"
             self.current_context_name = username
 
-            self.query_one("#context_label", Static).update(f"DM: {self.username} <-> {username}")
+            self.query_one("#context_label", Static).update(
+                f"Current conversation: DM: {self.username} <-> {username}"
+            )
 
             return
 
@@ -701,26 +779,30 @@ class PySyncTUI(App):
 
 
         if message == "__TUI_HISTORY_END__":
-
+            self.context_history_ready.set()
             return
 
 
         if message.startswith("__TUI_ERROR__:"):
 
             self.add_message(message[len("__TUI_ERROR__:")::])
+            self.context_history_ready.set()
 
             return
 
 
-        if ("sent you a DM request" in message):
-
-            sender = (message.split("sent you a DM request", 1)[0].strip())
+        if "sent to a DM request" in message or "sent you a DM request" in message:
+            marker = "sent to a DM request" if "sent to a DM request" in message else "sent you a DM request"
+            sender = message.split(marker, 1)[0].strip()
 
             self.pending_requests.add(sender)
 
             self.refresh_notification_button()
 
             self.add_message(f"DM request from {sender}")
+
+            if self.screen.__class__ == RequestScreen:
+                self.screen.refresh_requests()
 
             return
 
@@ -789,8 +871,19 @@ class PySyncTUI(App):
 
             return
 
+        if message.startswith("-from ") and ": pending" in message:
+            sender = message[len("-from "):].split(":", 1)[0].strip()
+            self.pending_requests.add(sender)
+            self.refresh_notification_button()
+            if self.screen.__class__ == RequestScreen:
+                self.screen.refresh_requests()
+            return
+
 
         # Normal server response / public message
+        if message == ">":
+            return
+
         if self.current_context == "room":
 
             self.add_message(message)
@@ -835,6 +928,10 @@ class PySyncTUI(App):
 
         count = len(self.pending_requests)
 
+        self.query_one("#notification_summary", Static).update(
+            f"Notifications: {count}"
+        )
+
         if count:
 
             button.label = (
@@ -869,6 +966,12 @@ class PySyncTUI(App):
             username = option_id[len("dm:")::]
 
             asyncio.create_task(self.select_dm(username))
+
+    async def on_unmount(self):
+        if self.server_task is not None:
+            self.server_task.cancel()
+        self.connection.close()
+        await self.connection.wait_closed()
 
 
 if __name__ == "__main__":
