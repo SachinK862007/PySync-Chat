@@ -64,7 +64,6 @@ PySync-Chat/
 ├── data/
 │   └── ...
 │
-├── requirements.txt
 └── README.md
 ```
 
@@ -99,11 +98,6 @@ Or in PowerShell:
 .venv\Scripts\Activate.ps1
 ```
 
-Install the dependencies:
-
-```bash
-pip install -r requirements.txt
-```
 
 ## Running the Server
 
