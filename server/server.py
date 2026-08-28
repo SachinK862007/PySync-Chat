@@ -563,7 +563,7 @@ async def handle_client(reader, writer, connection):
 
                 for room_name in rooms:
 
-                    await send_reply(writer, f"ROOM: {room_name}")
+                    await send_reply(writer, f"ROOM:{room_name}")
 
                 await send_reply(writer, "__TUI_ROOMS_END__")
 
@@ -579,7 +579,7 @@ async def handle_client(reader, writer, connection):
                     if nicknames[writer] in users:
 
                         for username in users:
-                            if users != nicknames[writer]:
+                            if username != nicknames[writer]:
 
                                 if username not in contacts:
                                     contacts.append(username)

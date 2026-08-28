@@ -52,7 +52,7 @@ def get_messages(connection, conversation):
 
 
 
-def get_dm_connects(connection, username):
+def get_dm_contacts(connection, username):
 
     cursor = connection.cursor()
 

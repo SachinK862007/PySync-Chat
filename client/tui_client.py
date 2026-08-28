@@ -372,7 +372,7 @@ class PySyncTUI(App):
 
             await self.connection.connect()
 
-            self.server_task = asyncio.create_task(self.process_server_messages())
+            #self.server_task = asyncio.create_task(self.process_server_messages())
 
             await self.consume_initial_auth_messages()
 
@@ -470,6 +470,10 @@ class PySyncTUI(App):
                 self.query_one("#context_label", Static).update("#general")
 
                 self.set_status("Connected successfully.")
+
+                if self.server_task is None:
+
+                    self.server_task = asyncio.create_task(self.process_server_messages())
 
                 await self.refresh_rooms()
 
