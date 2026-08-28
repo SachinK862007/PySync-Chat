@@ -28,7 +28,7 @@ class ServerConnection:
         self.reader_task = None
 
     async def connect(self):
-        self.reader, self.writer = await asyncio.open_connection(HOST, POST)
+        self.reader, self.writer = await asyncio.open_connection(HOST, PORT)
 
         self.reader_task = asyncio.create_task(self.read_loop())
 
@@ -36,7 +36,7 @@ class ServerConnection:
 
         try:
 
-            with True:
+            while True:
 
                 data = await self.reader.readline()
 
@@ -53,7 +53,9 @@ class ServerConnection:
 
         except Exception as error:
 
-            await self.incoming.put(f"__COnnectIon_ERROR__:{error}")
+            await self.incoming.put(
+                f"__CONNECTION_ERROR__:{error}"
+            )
 
 
     async def send(self, message):
@@ -142,7 +144,7 @@ class RequestScreen(ModalScreen):
 
             await self.chat_app.send_command(f"/accept {username}")
 
-            if username in self.chat_app.pending_requests.remove:
+            if username in self.chat_app.pending_requests:
                 self.chat_app.pending_requests.remove(username)
 
             self.refresh_requests()
@@ -160,7 +162,7 @@ class RequestScreen(ModalScreen):
             self.refresh_requests()
 
 
-class PySyncTUUI(App):
+class PySyncTUI(App):
     
     TITLE = "PySync Chat"
 
@@ -174,7 +176,7 @@ class PySyncTUUI(App):
         min-width: 50;
         max-width: 90;
         height: auto;
-        ,argin: 2 2;
+        margin: 2 2;
         padding: 2;
         border: solid $primary;
     }
