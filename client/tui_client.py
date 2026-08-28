@@ -171,12 +171,17 @@ class PySyncTUI(App):
         layout: vertical;
     }
 
+    #auth_area {
+        width: 1fr;
+        height: 1fr;
+        align: center middle;
+    }
+
     #auth_panel {
         width: 60%;
         min-width: 50;
         max-width: 90;
         height: auto;
-        margin: 2 2;
         padding: 2;
         border: solid $primary;
     }
@@ -438,21 +443,26 @@ class PySyncTUI(App):
 
                 await self.connection.send("R")
 
-
-            await self.connection.receive()
-            await self.connection.receive()
-
-
+            #server sends username prompt
+            response = await self.connection.receive()
+            self.set_status(response)
+            
+            #server sends password prompt
+            response = await self.connection.receive()
+            self.set_status(response)
+            
+            #send username
             await self.connection.send(username)
-
-
-            await self.connection.receive()
-
+            
+            #acknowledges username
+            response = await self.connection.receive()
+            self.set_status(response)
 
             await self.connection.send(password)
 
 
             result = await self.connection.receive()
+            self.set_status(result)
 
 
             if (
@@ -469,6 +479,10 @@ class PySyncTUI(App):
 
                 self.query_one("#context_label", Static).update("#general")
 
+                self.current_context = "room"
+
+                self.current_context_name = "general"
+
                 self.set_status("Connected successfully.")
 
                 if self.server_task is None:
@@ -482,12 +496,12 @@ class PySyncTUI(App):
                 return
 
 
-            self.set_status(result)
+            #self.set_status(result)
 
 
             # Server returns to the menu
-            await self.connection.receive()
-            await self.connection.receive()
+            #await self.connection.receive()
+            #await self.connection.receive()
 
 
         except Exception as error:
@@ -543,7 +557,7 @@ class PySyncTUI(App):
         # Normal message
         await self.send_command(message)
 
-        self.add_message(f"{self.username}: {message}")
+        #self.add_message(f"{self.username}: {message}")
 
 
     async def refresh_rooms(self):
