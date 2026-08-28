@@ -162,3 +162,27 @@ class RequestScreen(ModalScreen):
 
 class PySyncTUUI(App):
     
+    TITLE = "PySync Chat"
+
+    CSS = """
+    Screen {
+        layout: vertical;
+    }
+
+    #auth_panel {
+        width: 60%;
+        min-width: 50;
+        max-width: 90;
+        height: auto;
+        ,argin: 2 2;
+        padding: 2;
+        border: solid $primary;
+    }
+
+    #auth_title {
+        text-align: center;
+        width: 100%;
+        margin-bottom: 2;
+    }
+
+    
