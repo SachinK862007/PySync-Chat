@@ -32,6 +32,7 @@ nicknames = {}
 private_chats = {}
 requests = []
 active_dms = {}
+tui_clients = set()
 rooms = {
     "general": []
 }
@@ -71,11 +72,31 @@ async def remove_client(writer):
         connected_clients.remove(writer)
         nicknames.pop(writer,None)
 
+    tui_clients.discard(writer)
+
 
 async def send_reply(writer, reply):
     reply = str(reply).rstrip("\r\n")
     writer.write(f"{reply}\n".encode())
     await writer.drain()
+
+
+async def notify_tui_room_added(room_name):
+    for client in list(tui_clients):
+        try:
+            await send_reply(client, f"__TUI_ROOM_ADDED__:{room_name}")
+        except (ConnectionError, BrokenPipeError, OSError):
+            await remove_client(client)
+
+
+async def notify_tui_dm_added(writer, username):
+    if writer not in tui_clients:
+        return
+
+    try:
+        await send_reply(writer, f"__TUI_DM_ADDED__:{username}")
+    except (ConnectionError, BrokenPipeError, OSError):
+        await remove_client(writer)
 
 
 
@@ -205,6 +226,7 @@ async def handle_client(reader, writer, connection):
             if message.lower().startswith("/join "):
 
                 room_name = message.split(maxsplit = 1)[1]
+                room_is_new = room_name not in rooms
 
                 reply = dispatch_command(
                     "/join",
@@ -247,6 +269,9 @@ async def handle_client(reader, writer, connection):
                 join_message = f"{nicknames[writer]} joined : {room_name}\n"
 
                 await brodcast_to_room(room_name, join_message) # calls 3rd function
+
+                if room_is_new:
+                    await notify_tui_room_added(room_name)
                 
                 continue
                 
@@ -466,6 +491,7 @@ async def handle_client(reader, writer, connection):
 
                     if conversation_id:
                         active_dms[writer] = conversation_id
+                        await notify_tui_dm_added(writer, sender_nickname)
 
                         for client, nickname in nicknames.items():
 
@@ -480,6 +506,7 @@ async def handle_client(reader, writer, connection):
                                     f"{nicknames[writer]} "
                                     f"to enter the conversation. "
                                 )
+                                await notify_tui_dm_added(client, nicknames[writer])
 
                                 break
 
@@ -576,6 +603,8 @@ async def handle_client(reader, writer, connection):
 
             if message.upper() == "/TUI_ROOMS":
 
+                tui_clients.add(writer)
+
                 await send_reply(writer, "__TUI_ROOMS_BEGIN__")
 
                 for room_name in rooms:
@@ -589,6 +618,8 @@ async def handle_client(reader, writer, connection):
             
 
             if message.upper() == "/TUI_DMS":
+
+                tui_clients.add(writer)
 
                 contacts = get_dm_contacts(connection, nicknames[writer])
 
@@ -614,10 +645,7 @@ async def handle_client(reader, writer, connection):
             if message.upper().startswith("/TUI_ROOM "):
 
                 room_name = message.split(maxsplit = 1)[1].strip()
-
-                if room_name not in rooms:
-                    await send_reply(writer, f"__TUI_ERROR__:Room {room_name} not found")
-                    continue
+                room_is_new = room_name not in rooms
 
                 reply = dispatch_command(
                     "/join",
@@ -643,6 +671,10 @@ async def handle_client(reader, writer, connection):
                     await send_reply(writer, f"__TUI_HISTORY__:{sender}: {chat_message}")
 
                 await send_reply(writer, "__TUI_HISTORY_END__")
+
+                if room_is_new:
+                    await notify_tui_room_added(room_name)
+
                 continue
 
             

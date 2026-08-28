@@ -574,8 +574,21 @@ class PySyncTUI(App):
             return
 
 
-        # Commands are sent directly
         if message.startswith("/"):
+            command, _, argument = message.partition(" ")
+
+            if command.lower() == "/join" and argument.strip():
+                room_name = argument.strip()
+                await self.select_room(room_name)
+                await self.refresh_rooms()
+                return
+
+            if command.lower() == "/dm" and argument.strip():
+                target_username = argument.strip()
+                for username in self.dms:
+                    if username.lower() == target_username.lower():
+                        await self.select_dm(username)
+                        return
 
             await self.send_command(message)
 
@@ -663,6 +676,20 @@ class PySyncTUI(App):
 
 
     async def handle_server_message(self, message):
+
+        if message.startswith("__TUI_ROOM_ADDED__:"):
+            room_name = message[len("__TUI_ROOM_ADDED__:"):].strip()
+            if room_name and room_name not in self.rooms:
+                self.rooms.append(room_name)
+                self.update_room_list()
+            return
+
+        if message.startswith("__TUI_DM_ADDED__:"):
+            username = message[len("__TUI_DM_ADDED__:"):].strip()
+            if username and username not in self.dms:
+                self.dms.append(username)
+                self.update_dm_list()
+            return
 
         if message == "__TUI_ROOMS_BEGIN__":
 
