@@ -185,4 +185,109 @@ class PySyncTUUI(App):
         margin-bottom: 2;
     }
 
-    
+    #auth_status {
+        width: 100%;
+        height: auto;
+        margin-top: 1;
+    }
+
+    #main_panel {
+        width: 1fr;
+        height: 1fr;
+    }
+
+    #sidebar {
+        width: 30%;
+        min-width: 24;
+        max-width: 40;
+        height: 1fr;
+        border-right: solid $panel;
+    }
+
+    #sidebar_scroll {
+        width: 1fr;
+        height: 1fr;
+        overflow-y: auto;
+        padding: 1;
+    }
+
+    .section_title {
+        width: 100%;
+        margin-top: 1;
+        margin-bottom: 1;
+    }
+
+    #rooms_list {
+        height: auto;
+        max-height: 12;
+    }
+
+    #dm_list {
+        height: auto;
+        max-height: 16;
+    }
+
+    #notifications {
+        width: 100%;
+        height: 3;
+        dock: bottom;
+    }
+
+    #chat_area {
+        width: 1fr;
+        height: 1fr;
+    }
+
+    #context_label {
+        width: 100%;
+        height: 3;
+        padding: 1;
+        border-bottom: solid $panel;
+    }
+
+    #message_log {
+        width: 1fr;
+        height: 1fr;
+    }
+
+    #message_input {
+        width: 1fr;
+        height: 3;
+    }
+
+    #request_box {
+        width: 65%;
+        min-width: 50;
+        max-width: 80;
+        height: 60%;
+        min-height: 16;
+        padding: 2;
+        background: $panel;
+        border: solid $primary;
+        align: center middle;
+    }
+
+    #request_title {
+        width: 100%;
+        height: 3;
+        text-align: center;
+    }
+
+    #request_list {
+        width: 1fr;
+        height: 1fr;
+    }
+
+    #request_buttons {
+        width: 100%;
+        height: 3;
+    }
+
+    #request_buttons Button {
+        width: 1fr;
+    }
+
+    .hidden {
+        display: none;
+    }
+    """
