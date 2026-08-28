@@ -91,6 +91,28 @@ def get_dm_contacts(connection, username):
         if other_user not in contacts:
             contacts.append(other_user)
 
+    # Older versions stored only a generated id such as dm_1.  In that
+    # format the participants can be recovered from the message senders.
+    cursor.execute("""
+        SELECT conversation, sender
+        FROM messages
+        WHERE conversation LIKE 'dm_%'
+          AND conversation NOT LIKE 'dm|%'
+        ORDER BY id ASC
+    """)
+
+    legacy_users = {}
+    for conversation, sender in cursor.fetchall():
+        legacy_users.setdefault(conversation, set()).add(sender)
+
+    for users in legacy_users.values():
+        if username not in users:
+            continue
+
+        for other_user in users:
+            if other_user != username and other_user not in contacts:
+                contacts.append(other_user)
+
     return contacts
 
 

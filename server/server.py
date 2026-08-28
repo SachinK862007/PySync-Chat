@@ -17,6 +17,7 @@ from .services.room_service import find_current_room
 from .services.dm_service import get_dm_history_key
 from .services.dm_service import get_private_chat_users
 from .services.dm_service import find_private_chat
+from .services.dm_service import create_private_chat
 from .services.dm_service import send_dm_message
 
 from .services.request_service import find_pending_request
@@ -40,15 +41,18 @@ rooms = {
 
 #3rd function
 async def brodcast_to_room(room_name, message, sender = None):
-    for client in rooms[room_name]:
+    for client in list(rooms.get(room_name, [])):
         if sender is not None and client == sender:
             continue
 
         if client in active_dms:
             continue
 
-        client.write(message.encode())
-        await client.drain()
+        try:
+            client.write(message.encode())
+            await client.drain()
+        except (ConnectionError, BrokenPipeError, OSError):
+            await remove_client(client)
 
 
 
@@ -69,6 +73,7 @@ async def remove_client(writer):
 
 
 async def send_reply(writer, reply):
+    reply = str(reply).rstrip("\r\n")
     writer.write(f"{reply}\n".encode())
     await writer.drain()
 
@@ -173,6 +178,8 @@ async def handle_client(reader, writer, connection):
     username = await authenticate_client(reader, writer, connection)
 
     if username is None:
+        writer.close()
+        await writer.wait_closed()
         return 
     
     connected_clients.append(writer)
@@ -217,7 +224,9 @@ async def handle_client(reader, writer, connection):
                 if reply.startswith("You are already"):
                     continue
                 
-                history = get_messages(connect_db(), room_name)
+                history_connection = connect_db()
+                history = get_messages(history_connection, room_name)
+                history_connection.close()
 
                 if not history:
                    reply = "----No previous messages.----\n"
@@ -365,6 +374,14 @@ async def handle_client(reader, writer, connection):
                     await send_reply(writer, reply)
                     continue
             
+                conversation_id = find_private_chat(nicknames[writer], target_nickname, private_chats)
+                if conversation_id is None:
+                    contacts = get_dm_contacts(connection, nicknames[writer])
+                    if target_nickname in contacts:
+                        conversation_id = create_private_chat(
+                            nicknames[writer], target_nickname, private_chats
+                        )
+
                 reply = dispatch_command(
                     "/dm",
                     target_nickname,
@@ -587,6 +604,7 @@ async def handle_client(reader, writer, connection):
                 await send_reply(writer, "__TUI_DMS_BEGIN__")
 
                 for username in contacts:
+                    create_private_chat(nicknames[writer], username, private_chats)
                     await send_reply(writer, f"DM: {username}")
 
                 await send_reply(writer, "__TUI_DMS_END__")
@@ -637,6 +655,13 @@ async def handle_client(reader, writer, connection):
                 conversation_id = find_private_chat(nicknames[writer], target_nickname, private_chats)
 
                 if conversation_id is None:
+                    contacts = get_dm_contacts(connection, nicknames[writer])
+                    if target_nickname in contacts:
+                        conversation_id = create_private_chat(
+                            nicknames[writer], target_nickname, private_chats
+                        )
+
+                if conversation_id is None:
 
                     await send_reply(writer, f"__TUI_ERROR__:No DM conversation with {target_nickname}")
                     continue
@@ -648,6 +673,8 @@ async def handle_client(reader, writer, connection):
                 conversation_key = get_dm_history_key(nicknames[writer], target_nickname)
 
                 history = get_messages(connection, conversation_key)
+                legacy_history = get_messages(connection, conversation_id)
+                history = sorted(history + legacy_history, key=lambda row: row[0])
 
                 for row in history:
 

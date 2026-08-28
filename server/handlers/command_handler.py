@@ -253,7 +253,7 @@ def handle_where(writer, current_user, rooms, private_chats, active_dms):
 
         return(
             f"DM: {current_user}"
-            f"<-> {other_user}"
+            f" <-> {other_user}"
         )
 
     for room_name, clients in rooms.items():
