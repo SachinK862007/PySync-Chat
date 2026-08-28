@@ -52,6 +52,49 @@ def get_messages(connection, conversation):
 
 
 
+def get_dm_connects(connection, username):
+
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT conversation
+        FROM messages
+        WHERE conversation LIKE 'dm|%|%'
+        ORDER BY id ASC
+    """)
+
+    rows = cursor.fetchall()
+
+    contacts = []
+
+    for row in rows:
+
+        conversation = row[0]
+
+        parts = conversation.split("|", 2)
+
+        if len(parts) != 3:
+            continue
+
+        user_1 = parts[1]
+        user_2 = parts[2]
+
+        if user_1 == username:
+            other_user = user_2
+
+        elif user_2 == username:
+            other_user = user_1
+
+        else:
+            continue
+
+        if other_user not in contacts:
+            contacts.append(other_user)
+
+    return contacts
+
+
+
 if __name__ == "__main__":
     connection = connect_db()
 
