@@ -1,7 +1,7 @@
 import asyncio
 
 from textual.app import App, ComposeResult
-from textual.containers import Horizontal, Vertical, VerticalScroll, Container
+from textual.containers import Horizontal, Vertical, Container
 from textual.screen import ModalScreen
 from textual.widgets import (
     Button,
@@ -212,14 +212,15 @@ class PySyncTUI(App):
         min-width: 24;
         max-width: 40;
         height: 1fr;
+        padding: 1;
         border-right: solid $panel;
     }
 
     #sidebar_scroll {
         width: 1fr;
         height: 1fr;
-        overflow-y: auto;
-        padding: 1;
+        overflow-y: hidden;
+        align: left top;
     }
 
     .section_title {
@@ -229,12 +230,14 @@ class PySyncTUI(App):
     }
 
     #rooms_list {
-        height: auto;
+        height: 1fr;
+        min-height: 4;
         max-height: 12;
     }
 
     #dm_list {
-        height: auto;
+        height: 1fr;
+        min-height: 4;
         max-height: 16;
     }
 
@@ -259,6 +262,8 @@ class PySyncTUI(App):
         width: 100%;
         height: 3;
         padding: 1;
+        content-align: left middle;
+        background: $surface;
         border-bottom: solid $panel;
     }
 
@@ -361,7 +366,7 @@ class PySyncTUI(App):
 
             with Vertical(id = "sidebar"):
 
-                with VerticalScroll(id = "sidebar_scroll"):
+                with Vertical(id = "sidebar_scroll"):
                     yield Static("ROOMS", classes="section_title")
 
                     yield OptionList(id="rooms_list")
@@ -376,7 +381,7 @@ class PySyncTUI(App):
 
             with Vertical(id="chat_area"):
 
-                yield Static("Not connected", id="context_label")
+                yield Static("Current conversation: Not connected", id="context_label")
 
                 yield RichLog(id="message_log",wrap=True, markup=False, auto_scroll=True)
 
@@ -491,11 +496,13 @@ class PySyncTUI(App):
 
                 self.username = username
 
-                self.query_one("#auth_panel").add_class("hidden")
+                self.query_one("#auth_area").add_class("hidden")
 
                 self.query_one("#main_panel").remove_class("hidden")
 
-                self.query_one("#context_label", Static).update("#general")
+                self.query_one("#context_label", Static).update(
+                    "Current conversation: #general"
+                )
 
                 self.current_context = "room"
 
@@ -714,7 +721,9 @@ class PySyncTUI(App):
             self.current_context = "room"
             self.current_context_name = room_name
 
-            self.query_one("#context_label", Static).update(f"#{room_name}")
+            self.query_one("#context_label", Static).update(
+                f"Current conversation: #{room_name}"
+            )
 
             return
 
@@ -726,7 +735,9 @@ class PySyncTUI(App):
             self.current_context = "dm"
             self.current_context_name = username
 
-            self.query_one("#context_label", Static).update(f"DM: {self.username} <-> {username}")
+            self.query_one("#context_label", Static).update(
+                f"Current conversation: DM: {self.username} <-> {username}"
+            )
 
             return
 
