@@ -66,7 +66,7 @@ class ServerConnection:
         await self.writer.drain()
 
 
-    async def receiver(self):
+    async def receive(self):
         return await self.incoming.get()
 
     def close(self):
